@@ -1,0 +1,27 @@
+<Window
+    x:Class="RLMacroHub.App.Windows.OverlayWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="RL Macro Hub Overlay">
+    <Border
+        Width="56"
+        Height="39"
+        CornerRadius="6"
+        BorderThickness="1"
+        BorderBrush="#704D321F"
+        Background="#F2D9B783">
+        <Grid Padding="3,3">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="Auto" Foreground="#3E2818" FontFamily="Garamond" FontSize="8" FontWeight="Bold" />
+            <TextBlock x:Name="StateText" Grid.Column="1" Text="ON" Foreground="#3F6B3A" FontFamily="Garamond" FontSize="8" FontWeight="Bold" />
+            <TextBlock x:Name="CpsText" Grid.Row="1" Grid.ColumnSpan="2" Text="CPS: 0" HorizontalAlignment="Center" Foreground="#4A321F" FontFamily="Garamond" FontSize="7" FontWeight="SemiBold" />
+        </Grid>
+    </Border>
+</Window>

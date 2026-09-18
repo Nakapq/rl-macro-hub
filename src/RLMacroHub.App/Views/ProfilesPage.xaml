@@ -1,0 +1,74 @@
+<Page
+    x:Class="RLMacroHub.App.Views.ProfilesPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:RLMacroHub.App.ViewModels"
+    Loaded="OnLoaded">
+    <ScrollViewer>
+        <StackPanel Padding="36,28,36,48" Spacing="18">
+            <StackPanel Spacing="5">
+                <TextBlock Text="Profiles" Style="{StaticResource PageTitleTextStyle}" />
+                <TextBlock Text="Each profile stores its own autoclicker, ability-slot, and keybind settings." Style="{StaticResource MutedTextStyle}" />
+            </StackPanel>
+
+            <Border Style="{StaticResource CardStyle}">
+                <Grid ColumnSpacing="18">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Active profile" FontSize="12" Foreground="{StaticResource MutedTextBrush}" />
+                        <TextBlock Text="{x:Bind ViewModel.ActiveProfileName, Mode=OneWay}" FontSize="20" FontWeight="SemiBold" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Text="Changes are stored when you save a settings page." Style="{StaticResource MutedTextStyle}" VerticalAlignment="Center" />
+                </Grid>
+            </Border>
+
+            <Grid ColumnSpacing="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBox MaxWidth="360" HorizontalAlignment="Stretch" Text="{x:Bind ViewModel.ProfileName, Mode=TwoWay}" PlaceholderText="Profile name" />
+                <Button Grid.Column="1" Content="Create" Style="{StaticResource AccentButtonStyle}" Command="{x:Bind ViewModel.CreateCommand}" />
+                <Button Grid.Column="2" Content="Rename" Command="{x:Bind ViewModel.RenameCommand}" />
+                <Button Grid.Column="3" Content="Make active" Command="{x:Bind ViewModel.SelectCommand}" />
+                <Button Grid.Column="4" Content="Delete" Command="{x:Bind ViewModel.DeleteCommand}" />
+            </Grid>
+
+            <Border Style="{StaticResource CardStyle}" Padding="8" HorizontalAlignment="Stretch">
+                <ListView
+                    MinHeight="300"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch"
+                    ItemsSource="{x:Bind ViewModel.Profiles}"
+                    SelectedItem="{x:Bind ViewModel.SelectedProfile, Mode=TwoWay}"
+                    SelectionMode="Single">
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="vm:ProfileListItemViewModel">
+                            <Grid Padding="12,10" ColumnSpacing="12" HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="3">
+                                    <TextBlock Text="{x:Bind Name}" FontSize="16" FontWeight="SemiBold" />
+                                    <TextBlock Text="Saved macro configuration" FontSize="12" Foreground="{StaticResource MutedTextBrush}" />
+                                </StackPanel>
+                                <Border Grid.Column="1" Padding="9,3" CornerRadius="10" Background="#253D2D" VerticalAlignment="Center" Opacity="{x:Bind StatusOpacity}">
+                                    <TextBlock Text="{x:Bind StatusLabel}" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource SuccessBrush}" />
+                                </Border>
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </Border>
+
+            <TextBlock Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}" Style="{StaticResource MutedTextStyle}" TextWrapping="Wrap" />
+        </StackPanel>
+    </ScrollViewer>
+</Page>

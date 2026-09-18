@@ -1,0 +1,48 @@
+<Window
+    x:Class="RLMacroHub.App.Windows.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="RL Macro Hub">
+    <Grid Background="{StaticResource AppBackgroundBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="48" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid x:Name="AppTitleBar" Grid.Row="0" Padding="16,0" Background="Transparent">
+            <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                <Border Width="24" Height="24" CornerRadius="6" Background="{ThemeResource SystemAccentColor}">
+                    <TextBlock Text="R" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+                <TextBlock Text="RL Macro Hub" FontWeight="SemiBold" VerticalAlignment="Center" />
+            </StackPanel>
+        </Grid>
+
+        <NavigationView
+            x:Name="Navigation"
+            Grid.Row="1"
+            IsBackButtonVisible="Collapsed"
+            IsSettingsVisible="False"
+            IsPaneToggleButtonVisible="True"
+            PaneDisplayMode="Left"
+            OpenPaneLength="230"
+            SelectionChanged="OnNavigationSelectionChanged">
+            <NavigationView.MenuItems>
+                <NavigationViewItem Content="Dashboard" Tag="dashboard" Icon="Home" />
+                <NavigationViewItem Content="Macros" Tag="macros" Icon="AllApps">
+                    <NavigationViewItem.MenuItems>
+                        <NavigationViewItem Content="Autoclicker" Tag="autoclicker" />
+                        <NavigationViewItem Content="Keybinds" Tag="keybinds" />
+                        <NavigationViewItem Content="Mana Overlay" Tag="mana" />
+                        <NavigationViewItem Content="Gate Macro" Tag="gate" />
+                        <NavigationViewItem Content="Cooldown Indicators" Tag="cooldowns" />
+                    </NavigationViewItem.MenuItems>
+                </NavigationViewItem>
+                <NavigationViewItem Content="Overlay" Tag="overlay" Icon="View" />
+                <NavigationViewItem Content="Profiles" Tag="profiles" Icon="Contact" />
+                <NavigationViewItem Content="Settings" Tag="settings" Icon="Setting" />
+            </NavigationView.MenuItems>
+            <Frame x:Name="ContentFrame" />
+        </NavigationView>
+    </Grid>
+</Window>

@@ -1,0 +1,27 @@
+<Page
+    x:Class="RLMacroHub.App.Views.OverlayPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer>
+        <StackPanel Padding="36,28,36,48" Spacing="18" MaxWidth="800" HorizontalAlignment="Left">
+            <StackPanel Spacing="5">
+                <TextBlock Text="Overlay" Style="{StaticResource PageTitleTextStyle}" />
+                <TextBlock Text="Runtime overlays are configured from the module that owns them; this page is reserved for the future native editor." Style="{StaticResource MutedTextStyle}" TextWrapping="Wrap" />
+            </StackPanel>
+
+            <InfoBar
+                IsOpen="True"
+                IsClosable="False"
+                Severity="Informational"
+                Title="Runtime overlays are available"
+                Message="Configure the status HUD from Autoclicker and the PNG guide from Mana Overlay. Both are rendered by the AHK runtime and appear only while Roblox is focused." />
+
+            <Border Style="{StaticResource CardStyle}">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Planned overlay workspace" Style="{StaticResource SectionTitleTextStyle}" />
+                    <TextBlock Text="This page will host drag, edit, lock, and live-telemetry tools once the native overlay editor is implemented." Style="{StaticResource MutedTextStyle}" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

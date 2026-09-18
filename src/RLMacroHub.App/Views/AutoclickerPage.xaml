@@ -1,0 +1,85 @@
+<Page
+    x:Class="RLMacroHub.App.Views.AutoclickerPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:models="using:RLMacroHub.Core.Models">
+    <ScrollViewer>
+        <StackPanel Padding="36,28,36,48" Spacing="16" MaxWidth="800" HorizontalAlignment="Left">
+            <StackPanel Spacing="5">
+                <TextBlock Text="Autoclicker" Style="{StaticResource PageTitleTextStyle}" />
+                <TextBlock Text="The modular AutoHotkey v2 runtime owns the high-frequency scheduler and shares state with keybinds." Style="{StaticResource MutedTextStyle}" />
+            </StackPanel>
+            <InfoBar IsOpen="True" IsClosable="False" Severity="Informational" Title="Roblox-aware behavior" Message="Clicking is suppressed while Roblox is unfocused or chat is active. While inventory is open, autoclicking continues outside the configured inventory panel." />
+            <Border Style="{StaticResource SettingCardStyle}">
+                <StackPanel Spacing="18">
+                    <ToggleSwitch Header="Autoclicker enabled" IsOn="{x:Bind ViewModel.Enabled, Mode=TwoWay}" />
+                    <TextBox Header="Toggle hotkey" Text="{x:Bind ViewModel.ToggleHotkey, Mode=TwoWay}" PlaceholderText="XButton1" MaxWidth="380" HorizontalAlignment="Stretch" />
+                    <Grid ColumnSpacing="18">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <NumberBox Header="Maximum CPS" Value="{x:Bind ViewModel.MaximumCps, Mode=TwoWay}" Minimum="1" Maximum="120" SpinButtonPlacementMode="Compact" />
+                        <NumberBox Grid.Column="1" Header="Hold threshold (ms)" Value="{x:Bind ViewModel.HoldThresholdMs, Mode=TwoWay}" Minimum="0" Maximum="1000" SpinButtonPlacementMode="Compact" />
+                    </Grid>
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Ability slots" Style="{StaticResource SectionTitleTextStyle}" />
+                        <TextBlock Text="Every slot has an explicit autoclick policy. Names are optional organizational labels saved with the active profile and are not sent to AHK." Style="{StaticResource MutedTextStyle}" TextWrapping="Wrap" />
+                        <Grid Padding="8,0" ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="48" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="190" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Slot" Style="{StaticResource MutedTextStyle}" />
+                            <TextBlock Grid.Column="1" Text="Name" Style="{StaticResource MutedTextStyle}" />
+                            <TextBlock Grid.Column="2" Text="Autoclicker" Style="{StaticResource MutedTextStyle}" />
+                        </Grid>
+                        <ItemsControl ItemsSource="{x:Bind ViewModel.AbilitySlots}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="models:AbilitySlotConfiguration">
+                                    <Grid Padding="8,5" ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="48" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="190" />
+                                        </Grid.ColumnDefinitions>
+                                        <Border Width="34" Height="30" CornerRadius="6" BorderThickness="1" BorderBrush="{StaticResource CardBorderBrush}" HorizontalAlignment="Left">
+                                            <TextBlock Text="{x:Bind Slot}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold" />
+                                        </Border>
+                                        <TextBox Grid.Column="1" Text="{x:Bind Name, Mode=TwoWay}" PlaceholderText="Optional ability name" MaxLength="60" />
+                                        <ToggleSwitch Grid.Column="2" IsOn="{x:Bind AutoclickerEnabled, Mode=TwoWay}" OffContent="Disabled" OnContent="Enabled" VerticalAlignment="Center" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                    <ToggleSwitch Header="Suppress over the inventory panel" IsOn="{x:Bind ViewModel.SuppressOverInventoryPanel, Mode=TwoWay}" />
+                    <ToggleSwitch Header="Show inventory exclusion border" OffContent="Hidden" OnContent="Visible while Roblox is active" IsOn="{x:Bind ViewModel.ShowInventoryExclusionBorder, Mode=TwoWay}" />
+                    <TextBlock Text="Save settings, then use Reload runtime from the AHK tray menu if the runtime is already running." Style="{StaticResource MutedTextStyle}" TextWrapping="Wrap" />
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Inventory exclusion region" Style="{StaticResource SectionTitleTextStyle}" />
+                        <TextBlock Text="Client-relative percentages measured from the supplied 1920 × 1080 reference. These scale when Roblox moves or resizes." Style="{StaticResource MutedTextStyle}" TextWrapping="Wrap" />
+                        <Grid ColumnSpacing="12" RowSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <NumberBox Header="Left (%)" Value="{x:Bind ViewModel.InventoryLeftPercent, Mode=TwoWay}" Minimum="0" Maximum="100" SmallChange="0.1" SpinButtonPlacementMode="Compact" />
+                            <NumberBox Grid.Column="1" Header="Top (%)" Value="{x:Bind ViewModel.InventoryTopPercent, Mode=TwoWay}" Minimum="0" Maximum="100" SmallChange="0.1" SpinButtonPlacementMode="Compact" />
+                            <NumberBox Grid.Row="1" Header="Right (%)" Value="{x:Bind ViewModel.InventoryRightPercent, Mode=TwoWay}" Minimum="0" Maximum="100" SmallChange="0.1" SpinButtonPlacementMode="Compact" />
+                            <NumberBox Grid.Row="1" Grid.Column="1" Header="Bottom (%)" Value="{x:Bind ViewModel.InventoryBottomPercent, Mode=TwoWay}" Minimum="0" Maximum="100" SmallChange="0.1" SpinButtonPlacementMode="Compact" />
+                        </Grid>
+                    </StackPanel>
+                    <ToggleSwitch Header="Force enabled when inventory closes" IsOn="{x:Bind ViewModel.ForceEnabledWhenInventoryCloses, Mode=TwoWay}" />
+                    <ToggleSwitch Header="Show the AHK autoclicker status HUD" IsOn="{x:Bind ViewModel.ShowOverlayStatus, Mode=TwoWay}" />
+                </StackPanel>
+            </Border>
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <Button Content="Save settings" Style="{StaticResource AccentButtonStyle}" Command="{x:Bind ViewModel.SaveCommand}" />
+                <TextBlock Text="{x:Bind ViewModel.SaveStatus, Mode=OneWay}" VerticalAlignment="Center" Foreground="{StaticResource SuccessBrush}" />
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

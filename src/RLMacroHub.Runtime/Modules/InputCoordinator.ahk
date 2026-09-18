@@ -1,0 +1,111 @@
+class InputCoordinator {
+    __New(state, configuration, context, inventory, abilitySelection, autoclicker, logger) {
+        this.State := state
+        this.Configuration := configuration
+        this.Context := context
+        this.Inventory := inventory
+        this.AbilitySelection := abilitySelection
+        this.Autoclicker := autoclicker
+        this.Logger := logger
+        this.RegisteredHotkeys := []
+        this.ToggleHotkey := ""
+        this.ChatStartCallback := ObjBindMethod(this, "OnChatStart")
+        this.ChatEndCallback := ObjBindMethod(this, "OnChatEnd")
+        this.EscapeCallback := ObjBindMethod(this, "OnEscape")
+        this.InventoryCallback := ObjBindMethod(this, "OnInventoryKey")
+        this.LeftDownCallback := ObjBindMethod(this, "OnPhysicalLeftDown")
+        this.LeftUpCallback := ObjBindMethod(this, "OnPhysicalLeftUp")
+        this.AbilityCallback := ObjBindMethod(this, "OnAbilityKey")
+        this.ToggleCallback := ObjBindMethod(this, "OnToggle")
+    }
+
+    Register() {
+        HotIfWinActive RobloxContext.WindowSelector
+        this.RegisterOne("~/", this.ChatStartCallback)
+        this.RegisterOne("~Enter", this.ChatEndCallback)
+        this.RegisterOne("~Esc", this.EscapeCallback)
+        this.RegisterOne("*~SC029", this.InventoryCallback)
+        this.RegisterOne("$*~LButton", this.LeftDownCallback)
+        this.RegisterOne("$*~LButton Up", this.LeftUpCallback)
+        for key in RuntimeConfiguration.AbilitySlotKeys
+            this.RegisterOne("*~" key, this.AbilityCallback)
+
+        this.ToggleHotkey := "$*" this.Configuration.General.ToggleHotkey
+        this.RegisterOne(this.ToggleHotkey, this.ToggleCallback)
+        HotIfWinActive
+    }
+
+    RegisterOne(hotkeyName, callback) {
+        try {
+            Hotkey hotkeyName, callback, "On"
+            this.RegisteredHotkeys.Push(hotkeyName)
+        } catch as error {
+            this.Logger.Error("Could not register hotkey '" hotkeyName "': " error.Message)
+        }
+    }
+
+    Unregister() {
+        HotIfWinActive RobloxContext.WindowSelector
+        for hotkeyName in this.RegisteredHotkeys {
+            try Hotkey hotkeyName, "Off"
+        }
+        HotIfWinActive
+        this.RegisteredHotkeys := []
+    }
+
+    OnChatStart(*) {
+        this.State.TypingPaused := true
+        this.Autoclicker.HardStop()
+    }
+
+    OnChatEnd(*) {
+        if this.State.TypingPaused
+            this.State.TypingPaused := false
+    }
+
+    OnEscape(*) {
+        this.State.TypingPaused := false
+        this.Autoclicker.HardStop()
+    }
+
+    OnInventoryKey(*) {
+        this.Inventory.Toggle()
+        KeyWait "SC029"
+    }
+
+    OnPhysicalLeftDown(*) {
+        this.State.PhysicalLButtonDown := true
+        this.State.LastPhysicalDownTick := A_TickCount
+        this.Autoclicker.Start()
+    }
+
+    OnPhysicalLeftUp(*) {
+        this.State.PhysicalLButtonDown := false
+        this.State.LastPhysicalDownTick := 0
+        this.Autoclicker.HardStop()
+    }
+
+    OnAbilityKey(thisHotkey) {
+        if this.State.TypingPaused || this.State.RemapBusy
+            return
+
+        pressedKey := RegExReplace(thisHotkey, "^[*~$#!^+<>]+")
+        this.AbilitySelection.Select(pressedKey)
+        KeyWait pressedKey
+    }
+
+    OnToggle(*) {
+        this.State.Enabled := !this.State.Enabled
+        if !this.State.Enabled {
+            this.Autoclicker.HardStop()
+            this.Logger.Info("Runtime toggled off.")
+            return
+        }
+
+        if this.Context.IsActive() && GetKeyState("LButton", "P") {
+            this.State.PhysicalLButtonDown := true
+            this.State.LastPhysicalDownTick := A_TickCount - this.Configuration.Autoclicker.HoldThresholdMs
+        }
+        this.Logger.Info("Runtime toggled on.")
+    }
+}

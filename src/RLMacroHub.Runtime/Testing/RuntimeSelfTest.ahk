@@ -45,6 +45,8 @@ class RuntimeSelfTest {
         this.Assert(!abilitySelection.Select("3"), "an enabled slot should not restart an already allowed autoclicker")
         this.Assert(!abilitySelection.Select("4"), "switching between enabled slots should be a backend no-op")
         this.Assert(state.SelectedAbilitySlot = "4", "selected slot identity should still update on a no-op")
+        this.Assert(InputCoordinator.AbilityKeyFromHotkey("*~1") = "1", "ability key-down hotkeys should normalize")
+        this.Assert(InputCoordinator.AbilityKeyFromHotkey("*~= Up") = "=", "ability key-up hotkeys should normalize")
 
         this.Assert(InventoryController.IsInventoryKey("SC029"), "SC029 should be an inventory key")
         this.Assert(configuration.Autoclicker.MaximumCps = 120, "default CPS should remain 120")

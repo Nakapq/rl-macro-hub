@@ -8,6 +8,7 @@ class InputCoordinator {
         this.Autoclicker := autoclicker
         this.Logger := logger
         this.RegisteredHotkeys := []
+        this.AbilityKeysDown := Map()
         this.ToggleHotkey := ""
         this.ChatStartCallback := ObjBindMethod(this, "OnChatStart")
         this.ChatEndCallback := ObjBindMethod(this, "OnChatEnd")
@@ -16,6 +17,7 @@ class InputCoordinator {
         this.LeftDownCallback := ObjBindMethod(this, "OnPhysicalLeftDown")
         this.LeftUpCallback := ObjBindMethod(this, "OnPhysicalLeftUp")
         this.AbilityCallback := ObjBindMethod(this, "OnAbilityKey")
+        this.AbilityUpCallback := ObjBindMethod(this, "OnAbilityKeyUp")
         this.ToggleCallback := ObjBindMethod(this, "OnToggle")
     }
 
@@ -27,8 +29,10 @@ class InputCoordinator {
         this.RegisterOne("*~SC029", this.InventoryCallback)
         this.RegisterOne("$*~LButton", this.LeftDownCallback)
         this.RegisterOne("$*~LButton Up", this.LeftUpCallback)
-        for key in RuntimeConfiguration.AbilitySlotKeys
+        for key in RuntimeConfiguration.AbilitySlotKeys {
             this.RegisterOne("*~" key, this.AbilityCallback)
+            this.RegisterOne("*~" key " Up", this.AbilityUpCallback)
+        }
 
         this.ToggleHotkey := "$*" this.Configuration.General.ToggleHotkey
         this.RegisterOne(this.ToggleHotkey, this.ToggleCallback)
@@ -51,6 +55,7 @@ class InputCoordinator {
         }
         HotIfWinActive
         this.RegisteredHotkeys := []
+        this.AbilityKeysDown := Map()
     }
 
     OnChatStart(*) {
@@ -86,13 +91,25 @@ class InputCoordinator {
     }
 
     OnAbilityKey(thisHotkey) {
+        pressedKey := InputCoordinator.AbilityKeyFromHotkey(thisHotkey)
+        if this.AbilityKeysDown.Get(pressedKey, false)
+            return
+
+        this.AbilityKeysDown[pressedKey] := true
         if this.State.TypingPaused || this.State.RemapBusy
             return
 
-        pressedKey := RegExReplace(thisHotkey, "^[*~$#!^+<>]+")
         this.AbilitySelection.Select(pressedKey)
-        KeyWait pressedKey
     }
+
+    OnAbilityKeyUp(thisHotkey) {
+        releasedKey := InputCoordinator.AbilityKeyFromHotkey(thisHotkey)
+        this.AbilityKeysDown[releasedKey] := false
+    }
+
+    static AbilityKeyFromHotkey(hotkeyName) => RegExReplace(
+        RegExReplace(hotkeyName, "i) Up$"),
+        "^[*~$#!^+<>]+")
 
     OnToggle(*) {
         this.State.Enabled := !this.State.Enabled

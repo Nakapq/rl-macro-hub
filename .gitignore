@@ -27,3 +27,4 @@ runtime.log
 Thumbs.db
 Desktop.ini
 legacy/
+*.gitignore

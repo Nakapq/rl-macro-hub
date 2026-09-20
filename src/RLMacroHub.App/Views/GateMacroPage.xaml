@@ -9,7 +9,7 @@
                 <TextBlock Text="Gate Macro" Style="{StaticResource PageTitleTextStyle}" />
                 <TextBlock Text="Expand short gate notations into full locations while using Roblox chat." Style="{StaticResource MutedTextStyle}" />
             </StackPanel>
-            <InfoBar IsOpen="True" IsClosable="False" Severity="Informational" Title="Chat workflow" Message="Press / to open chat, then type an exact notation. The runtime selects the chat text, clears it, and types the mapped location. Ordinary chat text is left unchanged." />
+            <InfoBar IsOpen="True" IsClosable="False" Severity="Informational" Title="Roblox chat workflow" Message="Type or edit an exact notation in any Roblox chat or destination prompt. The mapping is expanded only when you press Enter, then submitted. Gate-slot detection is not required." />
             <ToggleSwitch Header="Gate notation expansion enabled" IsOn="{x:Bind ViewModel.Enabled, Mode=TwoWay}" />
             <Border Style="{StaticResource CardStyle}" Padding="18">
                 <StackPanel Spacing="10">
@@ -39,7 +39,10 @@
                             </DataTemplate>
                         </ItemsRepeater.ItemTemplate>
                     </ItemsRepeater>
-                    <Button Content="＋ Add mapping" HorizontalAlignment="Left" Command="{x:Bind ViewModel.AddMappingCommand}" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="＋ Add mapping" Command="{x:Bind ViewModel.AddMappingCommand}" />
+                        <Button Content="Restore defaults" Command="{x:Bind ViewModel.RestoreDefaultsCommand}" />
+                    </StackPanel>
                 </StackPanel>
             </Border>
             <InfoBar IsOpen="{x:Bind ViewModel.HasValidationError, Mode=OneWay}" Severity="Warning" IsClosable="False" Message="{x:Bind ViewModel.StatusMessage, Mode=OneWay}" />

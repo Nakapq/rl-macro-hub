@@ -50,7 +50,7 @@ class RuntimeConfiguration {
                 ]
             },
             GateMacro: {
-                Enabled: false,
+                Enabled: true,
                 Mappings: gateMappings
             },
             ManaOverlay: {
@@ -149,7 +149,7 @@ class RuntimeConfiguration {
                 configuration.Keybinds.Bindings.Push({ Source: source, Target: target })
             }
 
-            configuration.GateMacro.Enabled := this.ReadBoolean(path, "GateMacro", "Enabled", false)
+            configuration.GateMacro.Enabled := this.ReadBoolean(path, "GateMacro", "Enabled", true)
             configuration.GateMacro.Mappings := Map()
             configuration.GateMacro.Mappings.CaseSense := "Off"
             mappingCount := this.ReadInteger(path, "GateMacro", "MappingCount", 0, 0, this.MaximumGateMappings)
@@ -158,7 +158,7 @@ class RuntimeConfiguration {
                 location := Trim(IniRead(path, "GateMappings", "Mapping" A_Index "_Location", ""))
                 if !this.IsValidGateNotation(notation)
                     || location = ""
-                    || this.HasGateNotationConflict(configuration.GateMacro.Mappings, notation) {
+                    || configuration.GateMacro.Mappings.Has(notation) {
                     if IsObject(logger)
                         logger.Warn("Skipped invalid, incomplete, or duplicate gate mapping " A_Index ".")
                     continue
@@ -213,15 +213,6 @@ class RuntimeConfiguration {
 
     static IsValidGateNotation(notation) {
         return RegExMatch(notation, "^[A-Za-z0-9_-]{1," this.MaximumGateNotationLength "}$")
-    }
-
-    static HasGateNotationConflict(mappings, notation) {
-        for existingNotation, location in mappings {
-            _ := location
-            if InStr(existingNotation, notation) = 1 || InStr(notation, existingNotation) = 1
-                return true
-        }
-        return false
     }
 
     static ReadRequired(path, section, key, fallback) {

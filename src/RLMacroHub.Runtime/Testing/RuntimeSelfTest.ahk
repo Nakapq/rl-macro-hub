@@ -51,8 +51,20 @@ class RuntimeSelfTest {
         this.Assert(InventoryController.IsInventoryKey("SC029"), "SC029 should be an inventory key")
         this.Assert(configuration.Autoclicker.MaximumCps = 120, "default CPS should remain 120")
         this.Assert(configuration.Keybinds.Bindings.Length = 5, "five default bindings should exist")
-        this.Assert(!configuration.GateMacro.Enabled, "gate expansion should default off")
+        this.Assert(configuration.GateMacro.Enabled, "gate expansion should default on")
         this.Assert(configuration.GateMacro.Mappings.Count = 0, "gate mappings should default empty")
+        gateMappings := Map("d4", "desert 4")
+        gateMappings.CaseSense := "Off"
+        configuration.GateMacro.Mappings := gateMappings
+        gateMacro := GateMacroModule(state, configuration.GateMacro, RuntimeSelfTestActiveContext(), RuntimeSelfTestLogger())
+        gateMacro.OnObserverChar("", "D4")
+        this.Assert(gateMacro.InputBuffer = "d4", "the Roblox-wide observer should collect notation characters")
+        gateMacro.OnObserverKeyDown("", 8, 0)
+        this.Assert(gateMacro.InputBuffer = "d", "backspace should edit the pending notation")
+        gateMacro.OnObserverChar("", "4")
+        this.Assert(GateMacroModule.ResolveLocation(configuration.GateMacro, gateMacro.InputBuffer) = "desert 4", "the edited notation should resolve on submit")
+        gateMacro.OnObserverChar("", " ")
+        this.Assert(gateMacro.InputBuffer = "", "non-notation characters should reset the pending token")
         this.Assert(configuration.AbilitySlots.AutoclickerEnabled.Count = 12, "twelve default ability policies should exist")
         this.Assert(RuntimeConfiguration.IsReservedBindingSource("1"), "weapon slots should be reserved")
         this.Assert(RuntimeConfiguration.IsReservedBindingSource("LButton"), "physical click tracking should be reserved")
@@ -90,6 +102,10 @@ class RuntimeSelfTest {
 
 class RuntimeSelfTestContext {
     IsActive() => false
+}
+
+class RuntimeSelfTestActiveContext {
+    IsActive() => true
 }
 
 class RuntimeSelfTestAutoclicker {

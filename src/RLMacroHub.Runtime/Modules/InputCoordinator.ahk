@@ -25,7 +25,7 @@ class InputCoordinator {
     Register() {
         HotIfWinActive RobloxContext.WindowSelector
         this.RegisterOne("~/", this.ChatStartCallback)
-        this.RegisterOne("~Enter", this.ChatEndCallback)
+        this.RegisterOne("$*Enter", this.ChatEndCallback)
         this.RegisterOne("~Esc", this.EscapeCallback)
         this.RegisterOne("*~SC029", this.InventoryCallback)
         this.RegisterOne("$*~LButton", this.LeftDownCallback)
@@ -57,23 +57,24 @@ class InputCoordinator {
         HotIfWinActive
         this.RegisteredHotkeys := []
         this.AbilityKeysDown := Map()
-        this.GateMacro.EndChatCapture()
+        this.GateMacro.ResetInput()
     }
 
     OnChatStart(*) {
+        this.GateMacro.ResetInput()
         this.State.TypingPaused := true
         this.Autoclicker.HardStop()
-        this.GateMacro.BeginChatCapture()
     }
 
     OnChatEnd(*) {
-        this.GateMacro.EndChatCapture()
+        this.GateMacro.SubmitCapture()
+        SendEvent "{Blind}{Enter}"
         if this.State.TypingPaused
             this.State.TypingPaused := false
     }
 
     OnEscape(*) {
-        this.GateMacro.EndChatCapture()
+        this.GateMacro.ResetInput()
         this.State.TypingPaused := false
         this.Autoclicker.HardStop()
     }
@@ -84,6 +85,7 @@ class InputCoordinator {
     }
 
     OnPhysicalLeftDown(*) {
+        this.GateMacro.ResetInput()
         this.State.PhysicalLButtonDown := true
         this.State.LastPhysicalDownTick := A_TickCount
         this.Autoclicker.Start()

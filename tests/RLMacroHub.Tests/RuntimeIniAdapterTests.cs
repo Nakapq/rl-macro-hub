@@ -18,7 +18,7 @@ public sealed class RuntimeIniAdapterTests
         secondSlot.Name = "Dash";
         secondSlot.AutoclickerEnabled = false;
         configuration.GateMacro.Enabled = true;
-        configuration.GateMacro.Mappings.Add(new GateLocationMapping("d5", "desert 5"));
+        configuration.GateMacro.Mappings = [new GateLocationMapping("d5", "desert 5")];
 
         RuntimeIniAdapter adapter = new(NullLogger<RuntimeIniAdapter>.Instance);
         string ini = adapter.Export(configuration);

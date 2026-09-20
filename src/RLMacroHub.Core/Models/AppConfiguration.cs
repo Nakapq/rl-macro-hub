@@ -57,13 +57,55 @@ public sealed class GateMacroConfiguration
 {
     public const int MaximumMappings = 100;
 
-    public bool Enabled { get; set; }
-    public ObservableCollection<GateLocationMapping> Mappings { get; set; } = [];
+    public bool Enabled { get; set; } = true;
+    public ObservableCollection<GateLocationMapping> Mappings { get; set; } = CreateDefaultMappings();
+
+    public static ObservableCollection<GateLocationMapping> CreateDefaultMappings() =>
+    [
+        new("d1", "desert 1"),
+        new("d2", "desert 2"),
+        new("d3", "desert 3"),
+        new("d4", "desert 4"),
+        new("d5", "desert 5"),
+        new("t1", "tundra 1"),
+        new("t2", "tundra 2"),
+        new("t3", "tundra 3"),
+        new("t4", "tundra 4"),
+        new("t5", "tundra 5"),
+        new("t6", "tundra 6"),
+        new("t7", "tundra 7"),
+        new("f1", "forest 1"),
+        new("f2", "forest 2"),
+        new("f3", "forest 3"),
+        new("f4", "forest 4"),
+        new("f5", "forest 5"),
+        new("df1", "deepforest 1"),
+        new("df2", "deepforest 2"),
+        new("df3", "deepforest 3"),
+        new("df4", "deepforest 4"),
+        new("df5", "deepforest 5"),
+        new("s1", "shore 1"),
+        new("s2", "shore 2"),
+        new("s3", "shore 3"),
+        new("s4", "shore 4"),
+        new("j1", "jungle 1"),
+        new("j2", "jungle 2"),
+        new("p1", "plains 1"),
+        new("p2", "plains 2"),
+        new("p3", "plains 3"),
+        new("fo1", "forge 1"),
+        new("fo2", "forge 2"),
+        new("fo3", "forge 3"),
+        new("fo4", "forge 4"),
+        new("sn", "snail"),
+        new("sky", "skycastle"),
+        new("sig", "sigil")
+    ];
 
     public void ValidateAndNormalize()
     {
         Mappings ??= [];
-        List<string> notations = [];
+        HashSet<string> notations = new(StringComparer.OrdinalIgnoreCase);
         ObservableCollection<GateLocationMapping> normalized = [];
         foreach (GateLocationMapping? mapping in Mappings)
         {
@@ -79,12 +121,11 @@ public sealed class GateMacroConfiguration
                 .Trim();
             if (!GateLocationMapping.IsValidNotation(notation)
                 || location.Length is < 1 or > GateLocationMapping.MaximumLocationLength
-                || notations.Any(existing => GateLocationMapping.NotationsConflict(existing, notation)))
+                || !notations.Add(notation))
             {
                 continue;
             }
 
-            notations.Add(notation);
             normalized.Add(new GateLocationMapping(notation, location));
         }
 
@@ -113,9 +154,6 @@ public sealed class GateLocationMapping
         && notation.Length <= MaximumNotationLength
         && notation.All(character => char.IsAsciiLetterOrDigit(character) || character is '-' or '_');
 
-    public static bool NotationsConflict(string first, string second) =>
-        first.StartsWith(second, StringComparison.OrdinalIgnoreCase)
-        || second.StartsWith(first, StringComparison.OrdinalIgnoreCase);
 }
 
 public sealed class ManaOverlayConfiguration

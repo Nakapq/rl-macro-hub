@@ -26,8 +26,11 @@ public sealed class ConfigurationTests
         Assert.True(configuration.ManaOverlay.Enabled);
         Assert.Equal(ManaOverlayConfiguration.DefaultNormalizedY, configuration.ManaOverlay.NormalizedY);
         Assert.Equal(5, configuration.Keybinds.Bindings.Count);
-        Assert.False(configuration.GateMacro.Enabled);
-        Assert.Empty(configuration.GateMacro.Mappings);
+        Assert.True(configuration.GateMacro.Enabled);
+        Assert.Equal(38, configuration.GateMacro.Mappings.Count);
+        Assert.Contains(configuration.GateMacro.Mappings, mapping => mapping.Notation == "d5" && mapping.Location == "desert 5");
+        Assert.Contains(configuration.GateMacro.Mappings, mapping => mapping.Notation == "fo4" && mapping.Location == "forge 4");
+        Assert.Contains(configuration.GateMacro.Mappings, mapping => mapping.Notation == "sig" && mapping.Location == "sigil");
         OverlayElementConfiguration status = Assert.Single(configuration.Overlay.Elements);
         Assert.Equal(56, status.Width);
         Assert.Equal(-348, status.X);
@@ -76,7 +79,7 @@ public sealed class ConfigurationTests
         secondSlot.AutoclickerEnabled = false;
         configuration.Keybinds.Bindings.Add(new KeyBinding("Q", "6"));
         configuration.GateMacro.Enabled = true;
-        configuration.GateMacro.Mappings.Add(new GateLocationMapping("d5", "desert 5"));
+        configuration.GateMacro.Mappings = [new GateLocationMapping("custom", "forest 3")];
         await writer.SaveAsync(configuration);
 
         using JsonSettingsService reader = new(paths, NullLogger<JsonSettingsService>.Instance);
@@ -89,8 +92,24 @@ public sealed class ConfigurationTests
         Assert.Contains(reloaded.Keybinds.Bindings, binding => binding.Source == "Q" && binding.Target == "6");
         Assert.True(reloaded.GateMacro.Enabled);
         GateLocationMapping gateMapping = Assert.Single(reloaded.GateMacro.Mappings);
-        Assert.Equal("d5", gateMapping.Notation);
-        Assert.Equal("desert 5", gateMapping.Location);
+        Assert.Equal("custom", gateMapping.Notation);
+        Assert.Equal("forest 3", gateMapping.Location);
+    }
+
+    [Fact]
+    public async Task UsersCanRemoveAllDefaultGateMappings()
+    {
+        using TemporaryDirectory temporary = new();
+        AppPaths paths = new(temporary.Path);
+        using JsonSettingsService writer = new(paths, NullLogger<JsonSettingsService>.Instance);
+        AppConfiguration configuration = await writer.LoadAsync();
+        configuration.GateMacro.Mappings.Clear();
+        await writer.SaveAsync(configuration);
+
+        using JsonSettingsService reader = new(paths, NullLogger<JsonSettingsService>.Instance);
+        AppConfiguration reloaded = await reader.LoadAsync();
+
+        Assert.Empty(reloaded.GateMacro.Mappings);
     }
 
     [Theory]
@@ -261,7 +280,7 @@ public sealed class ConfigurationTests
         [
             new GateLocationMapping("  D5  ", "  desert 5  "),
             new GateLocationMapping("d5", "duplicate"),
-            new GateLocationMapping("d50", "prefix conflict"),
+            new GateLocationMapping("d50", "distinct longer notation"),
             new GateLocationMapping("not valid", "ignored"),
             new GateLocationMapping("c2", "castle\r\n2")
         ];
@@ -274,6 +293,11 @@ public sealed class ConfigurationTests
             {
                 Assert.Equal("d5", mapping.Notation);
                 Assert.Equal("desert 5", mapping.Location);
+            },
+            mapping =>
+            {
+                Assert.Equal("d50", mapping.Notation);
+                Assert.Equal("distinct longer notation", mapping.Location);
             },
             mapping =>
             {

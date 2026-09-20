@@ -45,7 +45,7 @@ All modules receive the same state object. The important invariants remain:
 - Remaps remain available in inventory and update inventory state when their target is the inventory key.
 - Closing inventory can force the master state enabled and resumes an already-held LMB only when the selected ability permits it.
 - Modifier chords pass through instead of being needlessly remapped.
-- Gate notation capture begins only after `/` opens Roblox chat, compares the complete visible input against the configured map without case sensitivity, and leaves unmatched chat untouched.
+- Gate notation capture observes a short rolling input buffer whenever Roblox is focused, without trying to identify the selected spell or specific chat UI. Enter compares the current token against the configured map without case sensitivity, replaces an exact match, and only then sends Enter to Roblox. Unmatched text is submitted unchanged.
 - The QPC scheduler emits at most one due click and resets a late deadline, never replaying missed clicks as a burst.
 - Scheduler waits use a reusable Windows high-resolution waitable timer. This avoids the approximately 15.4 ms effective `Sleep 1` interval observed on the development machine, which had limited a nominal 120 CPS setting to roughly 65 CPS.
 
@@ -75,7 +75,7 @@ The client rectangle is cached for 100 ms while the inventory is open; cursor hi
 
 Ability display names intentionally stay in canonical JSON/profile files and are never exported to AHK. Slot keys are the stable identity; names are optional organizational labels. All slots default to allowing autoclicking so an older configuration preserves its behavior until the user opts specific abilities out.
 
-Gate notations accept 1–20 ASCII letters, digits, hyphens, or underscores and are unique without regard to case. Prefix-conflicting pairs such as `d5` and `d50` are rejected so immediate matching stays deterministic. Locations accept up to 120 characters. After `/` opens chat, an `InputHook` observes visible user input and expands only when the entire buffer matches a notation. Expansion issues `Ctrl+A`, `Backspace`, then sends the configured location as text. The hook ignores synthetic input and ends on Enter, Escape, a match, or the maximum notation length.
+Gate notations accept 1–20 ASCII letters, digits, hyphens, or underscores and are unique without regard to case. Prefix pairs such as `d5` and `d50` may coexist because lookup happens only on Enter. Locations accept up to 120 characters. A visible `InputHook` keeps the most recent notation-shaped token while Roblox is focused; clicks, slash, Enter, Escape, non-notation characters, and a five-second typing gap reset it. On Enter, an exact match is selected and replaced through a temporary clipboard paste, the original clipboard contents are restored, and Enter is sent afterward. This avoids character-level remaps interfering with location names.
 
 The loader validates ranges, skips incomplete/duplicate/conflicting bindings and gate mappings, and restores defaults if parsing fails. Runtime configuration is read once at startup; the tray's Reload command restarts the process. Live configuration reload should arrive with structured IPC.
 

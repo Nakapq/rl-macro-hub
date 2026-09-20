@@ -85,6 +85,7 @@ class MacroRuntime {
 
         this.Started := true
         this.TimerResolution.Acquire()
+        this.GateMacro.Start()
         this.Input.Register()
         this.Keybinds.Register()
         this.Overlay.Create()
@@ -109,6 +110,7 @@ class MacroRuntime {
     }
 
     TickOverlays(*) {
+        this.GateMacro.Tick()
         this.Overlay.Tick()
         this.ManaOverlay.Tick()
         this.InventoryPanelOverlay.Tick()

@@ -51,6 +51,19 @@ public sealed partial class GateMacroViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private void RestoreDefaults()
+    {
+        Mappings.Clear();
+        foreach (GateLocationMapping mapping in GateMacroConfiguration.CreateDefaultMappings())
+        {
+            Mappings.Add(CreateRow(mapping.Notation, mapping.Location));
+        }
+
+        Validate();
+        StatusMessage = "Default gate mappings restored — save mappings to apply.";
+    }
+
+    [RelayCommand]
     private async Task SaveAsync()
     {
         if (!Validate())
@@ -104,19 +117,6 @@ public sealed partial class GateMacroViewModel : ObservableObject
             else if (!notations.Add(notation))
             {
                 row.Error = "Notation is duplicated.";
-                valid = false;
-            }
-        }
-
-        foreach (GateMappingItemViewModel row in Mappings.Where(row => row.Error.Length == 0))
-        {
-            string notation = row.Notation.Trim();
-            if (Mappings.Any(other =>
-                    !ReferenceEquals(row, other)
-                    && other.Error.Length == 0
-                    && GateLocationMapping.NotationsConflict(notation, other.Notation.Trim())))
-            {
-                row.Error = "Notation cannot be a prefix of another notation.";
                 valid = false;
             }
         }

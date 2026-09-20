@@ -1,10 +1,11 @@
 class InputCoordinator {
-    __New(state, configuration, context, inventory, abilitySelection, autoclicker, logger) {
+    __New(state, configuration, context, inventory, abilitySelection, gateMacro, autoclicker, logger) {
         this.State := state
         this.Configuration := configuration
         this.Context := context
         this.Inventory := inventory
         this.AbilitySelection := abilitySelection
+        this.GateMacro := gateMacro
         this.Autoclicker := autoclicker
         this.Logger := logger
         this.RegisteredHotkeys := []
@@ -56,19 +57,23 @@ class InputCoordinator {
         HotIfWinActive
         this.RegisteredHotkeys := []
         this.AbilityKeysDown := Map()
+        this.GateMacro.EndChatCapture()
     }
 
     OnChatStart(*) {
         this.State.TypingPaused := true
         this.Autoclicker.HardStop()
+        this.GateMacro.BeginChatCapture()
     }
 
     OnChatEnd(*) {
+        this.GateMacro.EndChatCapture()
         if this.State.TypingPaused
             this.State.TypingPaused := false
     }
 
     OnEscape(*) {
+        this.GateMacro.EndChatCapture()
         this.State.TypingPaused := false
         this.Autoclicker.HardStop()
     }

@@ -23,7 +23,7 @@ public sealed class MacrosViewModel : ObservableObject
         Items.Add(new("Autoclicker", "High-resolution modular AHK v2 click scheduler", configuration.Autoclicker.Enabled ? "Enabled" : "Disabled", "autoclicker", true));
         Items.Add(new("Keybinds", "Shared-state, modifier-aware Roblox remapping", configuration.Keybinds.Enabled ? "Enabled" : "Disabled", "keybinds", true));
         Items.Add(new("Mana Overlay", "Transparent PNG guide aligned to the focused Roblox client", configuration.ManaOverlay.Enabled ? "Enabled" : "Disabled", "mana", true));
-        Items.Add(new("Gate Macro", "Configurable gate automation workflow", "Planned", "gate", false));
+        Items.Add(new("Gate Macro", "Exact chat notation expansion for gate locations", configuration.GateMacro.Enabled ? "Enabled" : "Disabled", "gate", true));
         Items.Add(new("Cooldown Indicators", "Reusable visual cooldown tracking", "Planned", "cooldowns", false));
     }
 

@@ -26,6 +26,8 @@ public sealed class ConfigurationTests
         Assert.True(configuration.ManaOverlay.Enabled);
         Assert.Equal(ManaOverlayConfiguration.DefaultNormalizedY, configuration.ManaOverlay.NormalizedY);
         Assert.Equal(5, configuration.Keybinds.Bindings.Count);
+        Assert.False(configuration.GateMacro.Enabled);
+        Assert.Empty(configuration.GateMacro.Mappings);
         OverlayElementConfiguration status = Assert.Single(configuration.Overlay.Elements);
         Assert.Equal(56, status.Width);
         Assert.Equal(-348, status.X);
@@ -73,6 +75,8 @@ public sealed class ConfigurationTests
         secondSlot.Name = "  Dash  ";
         secondSlot.AutoclickerEnabled = false;
         configuration.Keybinds.Bindings.Add(new KeyBinding("Q", "6"));
+        configuration.GateMacro.Enabled = true;
+        configuration.GateMacro.Mappings.Add(new GateLocationMapping("d5", "desert 5"));
         await writer.SaveAsync(configuration);
 
         using JsonSettingsService reader = new(paths, NullLogger<JsonSettingsService>.Instance);
@@ -83,6 +87,10 @@ public sealed class ConfigurationTests
         Assert.Equal("Dash", reloadedSlot.Name);
         Assert.False(reloadedSlot.AutoclickerEnabled);
         Assert.Contains(reloaded.Keybinds.Bindings, binding => binding.Source == "Q" && binding.Target == "6");
+        Assert.True(reloaded.GateMacro.Enabled);
+        GateLocationMapping gateMapping = Assert.Single(reloaded.GateMacro.Mappings);
+        Assert.Equal("d5", gateMapping.Notation);
+        Assert.Equal("desert 5", gateMapping.Location);
     }
 
     [Theory]
@@ -158,6 +166,7 @@ public sealed class ConfigurationTests
         configuration.General = null!;
         configuration.Autoclicker = null!;
         configuration.Keybinds = null!;
+        configuration.GateMacro = null!;
         configuration.ManaOverlay = null!;
         configuration.Overlay = null!;
 
@@ -167,6 +176,7 @@ public sealed class ConfigurationTests
         Assert.Equal(12, configuration.Autoclicker.AbilitySlots.Count);
         Assert.NotNull(configuration.Autoclicker.InventoryPanel);
         Assert.NotNull(configuration.Keybinds.Bindings);
+        Assert.NotNull(configuration.GateMacro.Mappings);
         Assert.Equal(ManaOverlayConfiguration.DefaultScale, configuration.ManaOverlay.Scale);
         Assert.Equal("autoclicker-status", Assert.Single(configuration.Overlay.Elements).Id);
     }
@@ -241,5 +251,34 @@ public sealed class ConfigurationTests
         Assert.Equal(120, recovered.Autoclicker.MaximumCps);
         Assert.Single(Directory.GetFiles(temporary.Path, "config.corrupt.*.json"));
         Assert.NotEqual("null", (await File.ReadAllTextAsync(paths.ConfigurationFile)).Trim());
+    }
+
+    [Fact]
+    public void ValidationNormalizesGateMappings()
+    {
+        AppConfiguration configuration = AppConfiguration.CreateDefault();
+        configuration.GateMacro.Mappings =
+        [
+            new GateLocationMapping("  D5  ", "  desert 5  "),
+            new GateLocationMapping("d5", "duplicate"),
+            new GateLocationMapping("d50", "prefix conflict"),
+            new GateLocationMapping("not valid", "ignored"),
+            new GateLocationMapping("c2", "castle\r\n2")
+        ];
+
+        configuration.ValidateAndNormalize();
+
+        Assert.Collection(
+            configuration.GateMacro.Mappings,
+            mapping =>
+            {
+                Assert.Equal("d5", mapping.Notation);
+                Assert.Equal("desert 5", mapping.Location);
+            },
+            mapping =>
+            {
+                Assert.Equal("c2", mapping.Notation);
+                Assert.Equal("castle  2", mapping.Location);
+            });
     }
 }

@@ -1,5 +1,8 @@
 class RuntimeConfiguration {
-    static CurrentSchemaVersion := 5
+    static CurrentSchemaVersion := 6
+    static MaximumGateMappings := 100
+    static MaximumGateNotationLength := 20
+    static MaximumGateLocationLength := 120
     static AbilitySlotKeys := ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "="]
     static ReservedBindingSources := [
         "/", "Enter", "Esc", "Escape", "SC029", "LButton",
@@ -11,6 +14,8 @@ class RuntimeConfiguration {
         abilitySlotActions.CaseSense := "Off"
         for slot in this.AbilitySlotKeys
             abilitySlotActions[slot] := true
+        gateMappings := Map()
+        gateMappings.CaseSense := "Off"
 
         return {
             SchemaVersion: this.CurrentSchemaVersion,
@@ -43,6 +48,10 @@ class RuntimeConfiguration {
                     { Source: "t", Target: "8" },
                     { Source: "Tab", Target: "7" }
                 ]
+            },
+            GateMacro: {
+                Enabled: false,
+                Mappings: gateMappings
             },
             ManaOverlay: {
                 Enabled: true,
@@ -140,6 +149,26 @@ class RuntimeConfiguration {
                 configuration.Keybinds.Bindings.Push({ Source: source, Target: target })
             }
 
+            configuration.GateMacro.Enabled := this.ReadBoolean(path, "GateMacro", "Enabled", false)
+            configuration.GateMacro.Mappings := Map()
+            configuration.GateMacro.Mappings.CaseSense := "Off"
+            mappingCount := this.ReadInteger(path, "GateMacro", "MappingCount", 0, 0, this.MaximumGateMappings)
+            loop mappingCount {
+                notation := StrLower(Trim(IniRead(path, "GateMappings", "Mapping" A_Index "_Notation", "")))
+                location := Trim(IniRead(path, "GateMappings", "Mapping" A_Index "_Location", ""))
+                if !this.IsValidGateNotation(notation)
+                    || location = ""
+                    || this.HasGateNotationConflict(configuration.GateMacro.Mappings, notation) {
+                    if IsObject(logger)
+                        logger.Warn("Skipped invalid, incomplete, or duplicate gate mapping " A_Index ".")
+                    continue
+                }
+
+                if StrLen(location) > this.MaximumGateLocationLength
+                    location := SubStr(location, 1, this.MaximumGateLocationLength)
+                configuration.GateMacro.Mappings[notation] := location
+            }
+
             configuration.ManaOverlay.Enabled := this.ReadBoolean(path, "ManaOverlay", "Enabled", true)
             configuration.ManaOverlay.NormalizedX := this.ReadNumber(path, "ManaOverlay", "NormalizedX", configuration.ManaOverlay.NormalizedX, -1, 2)
             configuration.ManaOverlay.NormalizedY := this.ReadNumber(path, "ManaOverlay", "NormalizedY", configuration.ManaOverlay.NormalizedY, -1, 2)
@@ -177,6 +206,19 @@ class RuntimeConfiguration {
     static IsAbilitySlot(slot) {
         for supportedSlot in this.AbilitySlotKeys {
             if slot = supportedSlot
+                return true
+        }
+        return false
+    }
+
+    static IsValidGateNotation(notation) {
+        return RegExMatch(notation, "^[A-Za-z0-9_-]{1," this.MaximumGateNotationLength "}$")
+    }
+
+    static HasGateNotationConflict(mappings, notation) {
+        for existingNotation, location in mappings {
+            _ := location
+            if InStr(existingNotation, notation) = 1 || InStr(notation, existingNotation) = 1
                 return true
         }
         return false

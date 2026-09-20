@@ -17,12 +17,14 @@ public sealed class RuntimeIniAdapterTests
         AbilitySlotConfiguration secondSlot = configuration.Autoclicker.AbilitySlots.Single(slot => slot.Slot == "2");
         secondSlot.Name = "Dash";
         secondSlot.AutoclickerEnabled = false;
+        configuration.GateMacro.Enabled = true;
+        configuration.GateMacro.Mappings.Add(new GateLocationMapping("d5", "desert 5"));
 
         RuntimeIniAdapter adapter = new(NullLogger<RuntimeIniAdapter>.Instance);
         string ini = adapter.Export(configuration);
 
         Assert.Contains("[Runtime]", ini, StringComparison.Ordinal);
-        Assert.Contains("SchemaVersion=5", ini, StringComparison.Ordinal);
+        Assert.Contains("SchemaVersion=6", ini, StringComparison.Ordinal);
         Assert.Contains("MaximumCps=120", ini, StringComparison.Ordinal);
         Assert.Contains("HoldThresholdMs=30", ini, StringComparison.Ordinal);
         Assert.DoesNotContain("YieldMs", ini, StringComparison.Ordinal);
@@ -40,6 +42,11 @@ public sealed class RuntimeIniAdapterTests
         Assert.Contains("BindingCount=13", ini, StringComparison.Ordinal);
         Assert.Contains("Binding13_Source=F8", ini, StringComparison.Ordinal);
         Assert.Contains("Binding13_Target=Numpad7", ini, StringComparison.Ordinal);
+        Assert.Contains("[GateMacro]", ini, StringComparison.Ordinal);
+        Assert.Contains("Enabled=1", ini, StringComparison.Ordinal);
+        Assert.Contains("MappingCount=1", ini, StringComparison.Ordinal);
+        Assert.Contains("Mapping1_Notation=d5", ini, StringComparison.Ordinal);
+        Assert.Contains("Mapping1_Location=desert 5", ini, StringComparison.Ordinal);
         Assert.Contains("[ManaOverlay]", ini, StringComparison.Ordinal);
         Assert.Contains("NormalizedY=0", ini, StringComparison.Ordinal);
         Assert.Contains("Opacity=1", ini, StringComparison.Ordinal);

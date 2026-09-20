@@ -4,12 +4,13 @@ namespace RLMacroHub.Core.Models;
 
 public sealed class AppConfiguration
 {
-    public const int CurrentSchemaVersion = 5;
+    public const int CurrentSchemaVersion = 6;
 
     public int SchemaVersion { get; set; } = CurrentSchemaVersion;
     public GeneralConfiguration General { get; set; } = new();
     public AutoclickerConfiguration Autoclicker { get; set; } = new();
     public KeybindConfiguration Keybinds { get; set; } = new();
+    public GateMacroConfiguration GateMacro { get; set; } = new();
     public ManaOverlayConfiguration ManaOverlay { get; set; } = new();
     public OverlayConfiguration Overlay { get; set; } = new();
 
@@ -21,6 +22,7 @@ public sealed class AppConfiguration
         General ??= new();
         Autoclicker ??= new();
         Keybinds ??= new();
+        GateMacro ??= new();
         ManaOverlay ??= new();
         Overlay ??= new();
 
@@ -32,6 +34,7 @@ public sealed class AppConfiguration
         Autoclicker.InventoryPanel.ValidateAndNormalize();
         General.ActiveProfileId = Normalize(General.ActiveProfileId, "default");
         Keybinds.Bindings ??= [];
+        GateMacro.ValidateAndNormalize();
         ManaOverlay.ValidateAndNormalize();
         ManaOverlay.MigrateFrom(previousSchemaVersion);
         ManaOverlay.ValidateAndNormalize();
@@ -48,6 +51,71 @@ public sealed class AppConfiguration
 
     private static string Normalize(string? value, string fallback) =>
         string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
+}
+
+public sealed class GateMacroConfiguration
+{
+    public const int MaximumMappings = 100;
+
+    public bool Enabled { get; set; }
+    public ObservableCollection<GateLocationMapping> Mappings { get; set; } = [];
+
+    public void ValidateAndNormalize()
+    {
+        Mappings ??= [];
+        List<string> notations = [];
+        ObservableCollection<GateLocationMapping> normalized = [];
+        foreach (GateLocationMapping? mapping in Mappings)
+        {
+            if (mapping is null || normalized.Count >= MaximumMappings)
+            {
+                continue;
+            }
+
+            string notation = (mapping.Notation ?? string.Empty).Trim().ToLowerInvariant();
+            string location = (mapping.Location ?? string.Empty)
+                .Replace('\r', ' ')
+                .Replace('\n', ' ')
+                .Trim();
+            if (!GateLocationMapping.IsValidNotation(notation)
+                || location.Length is < 1 or > GateLocationMapping.MaximumLocationLength
+                || notations.Any(existing => GateLocationMapping.NotationsConflict(existing, notation)))
+            {
+                continue;
+            }
+
+            notations.Add(notation);
+            normalized.Add(new GateLocationMapping(notation, location));
+        }
+
+        Mappings = normalized;
+    }
+}
+
+public sealed class GateLocationMapping
+{
+    public const int MaximumNotationLength = 20;
+    public const int MaximumLocationLength = 120;
+
+    public GateLocationMapping() { }
+
+    public GateLocationMapping(string notation, string location)
+    {
+        Notation = notation;
+        Location = location;
+    }
+
+    public string Notation { get; set; } = string.Empty;
+    public string Location { get; set; } = string.Empty;
+
+    public static bool IsValidNotation(string? notation) =>
+        !string.IsNullOrWhiteSpace(notation)
+        && notation.Length <= MaximumNotationLength
+        && notation.All(character => char.IsAsciiLetterOrDigit(character) || character is '-' or '_');
+
+    public static bool NotationsConflict(string first, string second) =>
+        first.StartsWith(second, StringComparison.OrdinalIgnoreCase)
+        || second.StartsWith(first, StringComparison.OrdinalIgnoreCase);
 }
 
 public sealed class ManaOverlayConfiguration

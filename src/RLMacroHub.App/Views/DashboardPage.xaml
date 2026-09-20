@@ -77,11 +77,12 @@
                         <Button Content="Configure" HorizontalAlignment="Left" Command="{x:Bind ViewModel.ConfigureCommand}" CommandParameter="mana" />
                     </StackPanel>
                 </Border>
-                <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource CardStyle}" Opacity="0.82">
+                <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource CardStyle}">
                     <StackPanel Spacing="9">
                         <TextBlock Text="Gate Macro" FontSize="18" FontWeight="SemiBold" />
-                        <TextBlock Text="Planned" Foreground="{StaticResource WarningBrush}" />
-                        <TextBlock Text="Configurable gate automation." Style="{StaticResource MutedTextStyle}" />
+                        <TextBlock Text="{x:Bind ViewModel.GateMacroState, Mode=OneWay}" Foreground="{StaticResource SuccessBrush}" />
+                        <TextBlock Text="{x:Bind ViewModel.GateMacroSummary, Mode=OneWay}" Style="{StaticResource MutedTextStyle}" />
+                        <Button Content="Configure" HorizontalAlignment="Left" Command="{x:Bind ViewModel.ConfigureCommand}" CommandParameter="gate" />
                     </StackPanel>
                 </Border>
             </Grid>

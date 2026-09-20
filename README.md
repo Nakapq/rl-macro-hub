@@ -9,13 +9,14 @@ RL Macro Hub is a native Windows desktop manager for Roblox-focused AutoHotkey m
 - JSON configuration with validation, atomic writes, malformed-file recovery, and defaults
 - Autoclicker settings with the existing 120 CPS reference behavior, a configurable Roblox-relative inventory-panel exclusion region, and per-profile `1`–`=` ability policies with optional names
 - Dynamic keybinding editor with validation and no fixed legacy row limit
+- Profile-scoped Gate Macro editor with exact, case-insensitive chat shorthand expansion
 - Local profile create, rename, activate, guarded delete, and reliable per-profile macro-setting restoration
 - Single-process, shared-state AutoHotkey v2 runtime split into focused modules
 - AutoHotkey v2 discovery, duplicate prevention, Dashboard lifecycle controls, graceful close, and forced termination fallback
 - Focus-aware, click-through AHK overlays for autoclicker status, inventory calibration, and the supplied PNG mana guide
 - Daily local file logging
 
-Gate Macro and Cooldown Indicators are visible as planned modules, not fake implementations. Mana Overlay is configurable and available in the modular runtime.
+Cooldown Indicators remain visible as a planned module, not a fake implementation. Gate Macro and Mana Overlay are configurable and available in the modular runtime.
 
 ## Requirements
 

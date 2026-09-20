@@ -49,4 +49,4 @@ jobs:
         with:
           name: test-results
           path: artifacts/test-results
-          if-no-files-found: error
+          if-no-files-found: warn

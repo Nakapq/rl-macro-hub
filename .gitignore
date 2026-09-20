@@ -18,7 +18,7 @@ Generated Files/
 *.pfx
 CommunityAutoClicker.ini
 config.json
-profiles/
+/profiles/
 logs/
 runtime/
 runtime.log

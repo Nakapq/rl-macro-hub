@@ -42,7 +42,7 @@ public sealed class JsonSettingsService : ISettingsService, IDisposable
             {
                 await using FileStream stream = File.OpenRead(_paths.ConfigurationFile);
                 Current = await JsonSerializer.DeserializeAsync<AppConfiguration>(stream, SerializerOptions, cancellationToken)
-                    .ConfigureAwait(false) ?? AppConfiguration.CreateDefault();
+                    .ConfigureAwait(false) ?? throw new JsonException("Configuration cannot be null.");
                 Current.ValidateAndNormalize();
                 return Current;
             }

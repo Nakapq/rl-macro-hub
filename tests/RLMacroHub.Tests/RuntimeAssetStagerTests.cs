@@ -24,4 +24,40 @@ public sealed class RuntimeAssetStagerTests
         Assert.True(File.Exists(Path.Combine(destination, "Modules", "Example.ahk")));
         Assert.True(File.Exists(Path.Combine(destination, "Assets", "Overlay.png")));
     }
+
+    [Fact]
+    public void StagerRejectsSourceWithoutEntryPoint()
+    {
+        using TemporaryDirectory temporary = new();
+        string source = Path.Combine(temporary.Path, "source");
+        string destination = Path.Combine(temporary.Path, "destination");
+        Directory.CreateDirectory(source);
+        RuntimeAssetStager stager = new(NullLogger<RuntimeAssetStager>.Instance);
+
+        FileNotFoundException exception = Assert.Throws<FileNotFoundException>(
+            () => stager.StageModernRuntime(source, destination));
+
+        Assert.EndsWith("RLMacroHub.Runtime.ahk", exception.FileName, StringComparison.Ordinal);
+        Assert.False(Directory.Exists(destination));
+    }
+
+    [Fact]
+    public void StagerOverwritesExistingRuntimeFiles()
+    {
+        using TemporaryDirectory temporary = new();
+        string source = Path.Combine(temporary.Path, "source");
+        string destination = Path.Combine(temporary.Path, "destination");
+        Directory.CreateDirectory(source);
+        Directory.CreateDirectory(destination);
+        string sourceEntryPoint = Path.Combine(source, "RLMacroHub.Runtime.ahk");
+        string destinationEntryPoint = Path.Combine(destination, "RLMacroHub.Runtime.ahk");
+        File.WriteAllText(sourceEntryPoint, "new runtime");
+        File.WriteAllText(destinationEntryPoint, "stale runtime");
+        RuntimeAssetStager stager = new(NullLogger<RuntimeAssetStager>.Instance);
+
+        string stagedEntryPoint = stager.StageModernRuntime(source, destination);
+
+        Assert.Equal(destinationEntryPoint, stagedEntryPoint);
+        Assert.Equal("new runtime", File.ReadAllText(destinationEntryPoint));
+    }
 }

@@ -18,7 +18,7 @@ Generated Files/
 *.pfx
 CommunityAutoClicker.ini
 config.json
-profiles/
+/profiles/
 logs/
 runtime/
 runtime.log
@@ -27,4 +27,3 @@ runtime.log
 Thumbs.db
 Desktop.ini
 legacy/
-*.gitignore

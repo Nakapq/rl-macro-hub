@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using RLMacroHub.Core.Models;
 using RLMacroHub.Infrastructure.Configuration;
 using RLMacroHub.Infrastructure.Profiles;
+using System.Text.Json;
 
 namespace RLMacroHub.Tests;
 
@@ -164,5 +165,38 @@ public sealed class ProfileServiceTests
         Assert.True(Assert.Single(profiles).IsDefault);
         Assert.True(File.Exists(defaultPath));
         Assert.Single(Directory.EnumerateFiles(paths.ProfilesDirectory, "default.json.corrupt.*"));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task ProfileNamesCannotBeBlank(string name)
+    {
+        using TemporaryDirectory temporary = new();
+        AppPaths paths = new(temporary.Path);
+        using JsonSettingsService settings = new(paths, NullLogger<JsonSettingsService>.Instance);
+        await settings.LoadAsync();
+        using ProfileService service = new(paths, settings, NullLogger<ProfileService>.Instance);
+
+        await Assert.ThrowsAsync<ArgumentException>(() => service.CreateAsync(name));
+    }
+
+    [Fact]
+    public async Task ProfileWithMismatchedStoredIdIsIgnored()
+    {
+        using TemporaryDirectory temporary = new();
+        AppPaths paths = new(temporary.Path);
+        using JsonSettingsService settings = new(paths, NullLogger<JsonSettingsService>.Instance);
+        await settings.LoadAsync();
+        paths.EnsureCreated();
+        ProfileConfiguration mismatched = new() { Id = "different-id", Name = "Untrusted" };
+        string mismatchedPath = Path.Combine(paths.ProfilesDirectory, "expected-id.json");
+        await File.WriteAllTextAsync(mismatchedPath, JsonSerializer.Serialize(mismatched));
+        using ProfileService service = new(paths, settings, NullLogger<ProfileService>.Instance);
+
+        IReadOnlyList<ProfileConfiguration> profiles = await service.GetProfilesAsync();
+
+        ProfileConfiguration profile = Assert.Single(profiles);
+        Assert.Equal("default", profile.Id);
     }
 }

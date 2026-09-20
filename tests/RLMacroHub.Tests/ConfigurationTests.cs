@@ -150,4 +150,96 @@ public sealed class ConfigurationTests
         Assert.Single(Directory.GetFiles(temporary.Path, "config.corrupt.*.json"));
         Assert.True(File.Exists(paths.ConfigurationFile));
     }
+
+    [Fact]
+    public void ValidationReplacesMissingSectionsAndCollections()
+    {
+        AppConfiguration configuration = AppConfiguration.CreateDefault();
+        configuration.General = null!;
+        configuration.Autoclicker = null!;
+        configuration.Keybinds = null!;
+        configuration.ManaOverlay = null!;
+        configuration.Overlay = null!;
+
+        configuration.ValidateAndNormalize();
+
+        Assert.Equal("default", configuration.General.ActiveProfileId);
+        Assert.Equal(12, configuration.Autoclicker.AbilitySlots.Count);
+        Assert.NotNull(configuration.Autoclicker.InventoryPanel);
+        Assert.NotNull(configuration.Keybinds.Bindings);
+        Assert.Equal(ManaOverlayConfiguration.DefaultScale, configuration.ManaOverlay.Scale);
+        Assert.Equal("autoclicker-status", Assert.Single(configuration.Overlay.Elements).Id);
+    }
+
+    [Fact]
+    public void ValidationNormalizesInputAndAbilitySlots()
+    {
+        AppConfiguration configuration = AppConfiguration.CreateDefault();
+        configuration.General.ActiveProfileId = "  alternate  ";
+        configuration.Autoclicker.ToggleHotkey = "  F8  ";
+        configuration.Autoclicker.HoldThresholdMs = 2_000;
+        configuration.Autoclicker.InventoryPanel.NormalizedLeft = -1;
+        configuration.Autoclicker.InventoryPanel.NormalizedTop = -1;
+        configuration.Autoclicker.InventoryPanel.NormalizedRight = 2;
+        configuration.Autoclicker.InventoryPanel.NormalizedBottom = 2;
+        configuration.Autoclicker.AbilitySlots =
+        [
+            new AbilitySlotConfiguration(" 2 ", new string('a', AbilitySlotConfiguration.MaximumNameLength + 10), false),
+            new AbilitySlotConfiguration("2", "ignored duplicate", true),
+            new AbilitySlotConfiguration("unsupported", "ignored", false)
+        ];
+        configuration.Keybinds.Bindings = [new KeyBinding("  Q  ", "  6  ")];
+
+        configuration.ValidateAndNormalize();
+
+        Assert.Equal("alternate", configuration.General.ActiveProfileId);
+        Assert.Equal("F8", configuration.Autoclicker.ToggleHotkey);
+        Assert.Equal(1_000, configuration.Autoclicker.HoldThresholdMs);
+        Assert.Equal(0, configuration.Autoclicker.InventoryPanel.NormalizedLeft);
+        Assert.Equal(0, configuration.Autoclicker.InventoryPanel.NormalizedTop);
+        Assert.Equal(1, configuration.Autoclicker.InventoryPanel.NormalizedRight);
+        Assert.Equal(1, configuration.Autoclicker.InventoryPanel.NormalizedBottom);
+        Assert.Equal(12, configuration.Autoclicker.AbilitySlots.Count);
+        AbilitySlotConfiguration secondSlot = configuration.Autoclicker.AbilitySlots.Single(slot => slot.Slot == "2");
+        Assert.Equal(AbilitySlotConfiguration.MaximumNameLength, secondSlot.Name.Length);
+        Assert.False(secondSlot.AutoclickerEnabled);
+        Assert.Equal("Q", Assert.Single(configuration.Keybinds.Bindings).Source);
+        Assert.Equal("6", Assert.Single(configuration.Keybinds.Bindings).Target);
+    }
+
+    [Fact]
+    public async Task SaveNormalizesConfigurationAndRaisesSettingsChanged()
+    {
+        using TemporaryDirectory temporary = new();
+        AppPaths paths = new(temporary.Path);
+        using JsonSettingsService service = new(paths, NullLogger<JsonSettingsService>.Instance);
+        AppConfiguration configuration = AppConfiguration.CreateDefault();
+        configuration.Autoclicker.MaximumCps = 500;
+        AppConfiguration? notification = null;
+        service.SettingsChanged += (_, updated) => notification = updated;
+
+        await service.SaveAsync(configuration);
+
+        Assert.Same(configuration, service.Current);
+        Assert.Same(configuration, notification);
+        Assert.Equal(120, configuration.Autoclicker.MaximumCps);
+        Assert.True(File.Exists(paths.ConfigurationFile));
+        Assert.False(File.Exists(paths.ConfigurationFile + ".tmp"));
+    }
+
+    [Fact]
+    public async Task NullConfigurationIsPreservedAndDefaultsAreRestored()
+    {
+        using TemporaryDirectory temporary = new();
+        AppPaths paths = new(temporary.Path);
+        paths.EnsureCreated();
+        await File.WriteAllTextAsync(paths.ConfigurationFile, "null");
+        using JsonSettingsService service = new(paths, NullLogger<JsonSettingsService>.Instance);
+
+        AppConfiguration recovered = await service.LoadAsync();
+
+        Assert.Equal(120, recovered.Autoclicker.MaximumCps);
+        Assert.Single(Directory.GetFiles(temporary.Path, "config.corrupt.*.json"));
+        Assert.NotEqual("null", (await File.ReadAllTextAsync(paths.ConfigurationFile)).Trim());
+    }
 }

@@ -46,4 +46,22 @@ public sealed class RuntimeIniAdapterTests
         Assert.Contains("Width=56", ini, StringComparison.Ordinal);
         Assert.Contains("RightOffset=348", ini, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public async Task ExportAsyncWritesAtomicallyAndSanitizesBindings()
+    {
+        using TemporaryDirectory temporary = new();
+        string destination = Path.Combine(temporary.Path, "nested", "runtime.ini");
+        AppConfiguration configuration = AppConfiguration.CreateDefault();
+        configuration.Keybinds.Bindings = [new KeyBinding("  Q\r\nInjected=1  ", "  6  ")];
+        RuntimeIniAdapter adapter = new(NullLogger<RuntimeIniAdapter>.Instance);
+
+        await adapter.ExportAsync(configuration, destination);
+
+        string ini = await File.ReadAllTextAsync(destination);
+        Assert.Contains("Binding1_Source=QInjected=1", ini, StringComparison.Ordinal);
+        Assert.Contains("Binding1_Target=6", ini, StringComparison.Ordinal);
+        Assert.DoesNotContain("\nInjected=1", ini, StringComparison.Ordinal);
+        Assert.False(File.Exists(destination + ".tmp"));
+    }
 }

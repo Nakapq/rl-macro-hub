@@ -36,7 +36,10 @@ class GateMacroModule {
 
     StartObserver() {
         try {
-            observer := InputHook("V I1")
+            ; Bound keys are passed through with SendEvent while chat is active.
+            ; Observe level-zero input so those characters remain part of a notation;
+            ; RemapBusy keeps actual remap output and our replacement text excluded.
+            observer := InputHook("V")
             observer.OnEnd := this.ObserverEndedCallback
             observer.OnChar := this.ObserverCharCallback
             observer.OnKeyDown := this.ObserverKeyDownCallback
@@ -66,7 +69,7 @@ class GateMacroModule {
 
     OnObserverChar(observer, characters) {
         _ := observer
-        if !this.Context.IsActive()
+        if !this.Context.IsActive() || this.State.RemapBusy
             return
 
         if this.LastInputTick = 0 || A_TickCount - this.LastInputTick > GateMacroModule.InputResetIntervalMs
@@ -88,7 +91,7 @@ class GateMacroModule {
     OnObserverKeyDown(observer, virtualKey, scanCode) {
         _ := observer
         _ := scanCode
-        if virtualKey != 8 || !this.Context.IsActive()
+        if virtualKey != 8 || !this.Context.IsActive() || this.State.RemapBusy
             return
 
         length := StrLen(this.InputBuffer)

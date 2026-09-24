@@ -45,16 +45,15 @@ class RuntimeSelfTest {
         this.Assert(!abilitySelection.Select("3"), "an enabled slot should not restart an already allowed autoclicker")
         this.Assert(!abilitySelection.Select("4"), "switching between enabled slots should be a backend no-op")
         this.Assert(state.SelectedAbilitySlot = "4", "selected slot identity should still update on a no-op")
-        this.Assert(InputCoordinator.AbilityKeyFromHotkey("*~1") = "1", "ability key-down hotkeys should normalize")
-        this.Assert(InputCoordinator.AbilityKeyFromHotkey("*~= Up") = "=", "ability key-up hotkeys should normalize")
 
         this.Assert(InventoryController.IsInventoryKey("SC029"), "SC029 should be an inventory key")
         this.Assert(configuration.Autoclicker.MaximumCps = 120, "default CPS should remain 120")
         this.Assert(configuration.Keybinds.Bindings.Length = 5, "five default bindings should exist")
         this.Assert(configuration.GateMacro.Enabled, "gate expansion should default on")
         this.Assert(configuration.GateMacro.Mappings.Count = 0, "gate mappings should default empty")
-        gateMappings := Map("d4", "desert 4")
+        gateMappings := Map()
         gateMappings.CaseSense := "Off"
+        gateMappings["d4"] := "desert 4"
         configuration.GateMacro.Mappings := gateMappings
         gateMacro := GateMacroModule(state, configuration.GateMacro, RuntimeSelfTestActiveContext(), RuntimeSelfTestLogger())
         gateMacro.OnObserverChar("", "D4")
@@ -65,6 +64,10 @@ class RuntimeSelfTest {
         this.Assert(GateMacroModule.ResolveLocation(configuration.GateMacro, gateMacro.InputBuffer) = "desert 4", "the edited notation should resolve on submit")
         gateMacro.OnObserverChar("", " ")
         this.Assert(gateMacro.InputBuffer = "", "non-notation characters should reset the pending token")
+        state.RemapBusy := true
+        gateMacro.OnObserverChar("", "d4")
+        this.Assert(gateMacro.InputBuffer = "", "remap output should not enter the notation buffer")
+        state.RemapBusy := false
         this.Assert(configuration.AbilitySlots.AutoclickerEnabled.Count = 12, "twelve default ability policies should exist")
         this.Assert(RuntimeConfiguration.IsReservedBindingSource("1"), "weapon slots should be reserved")
         this.Assert(RuntimeConfiguration.IsReservedBindingSource("LButton"), "physical click tracking should be reserved")

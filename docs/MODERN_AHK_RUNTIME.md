@@ -45,6 +45,7 @@ All modules receive the same state object. The important invariants remain:
 - Remaps remain available in inventory and update inventory state when their target is the inventory key.
 - Closing inventory can force the master state enabled and resumes an already-held LMB only when the selected ability permits it.
 - Modifier chords pass through instead of being needlessly remapped.
+- Chat typing suppression is independent of the Gate Macro setting. `/` marks the runtime as typing-paused, so autoclicking stops and bound sources pass through unchanged; Enter or Escape clears the pause without changing the master enabled state.
 - Gate notation capture observes a short rolling input buffer whenever Roblox is focused, without trying to identify the selected spell or specific chat UI. Enter compares the current token against the configured map without case sensitivity, replaces an exact match, and only then sends Enter to Roblox. Unmatched text is submitted unchanged.
 - The QPC scheduler emits at most one due click and resets a late deadline, never replaying missed clicks as a burst.
 - Scheduler waits use a reusable Windows high-resolution waitable timer. This avoids the approximately 15.4 ms effective `Sleep 1` interval observed on the development machine, which had limited a nominal 120 CPS setting to roughly 65 CPS.

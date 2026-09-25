@@ -62,6 +62,19 @@ public sealed class RuntimeIniAdapter
         }
 
         output.AppendLine();
+        output.AppendLine("[GateMacro]");
+        Append(output, "Enabled", configuration.GateMacro.Enabled);
+        Append(output, "MappingCount", configuration.GateMacro.Mappings.Count);
+        output.AppendLine();
+        output.AppendLine("[GateMappings]");
+        for (int index = 0; index < configuration.GateMacro.Mappings.Count; index++)
+        {
+            GateLocationMapping mapping = configuration.GateMacro.Mappings[index];
+            Append(output, $"Mapping{index + 1}_Notation", mapping.Notation);
+            Append(output, $"Mapping{index + 1}_Location", mapping.Location);
+        }
+
+        output.AppendLine();
         output.AppendLine("[ManaOverlay]");
         Append(output, "Enabled", configuration.ManaOverlay.Enabled);
         Append(output, "NormalizedX", configuration.ManaOverlay.NormalizedX);

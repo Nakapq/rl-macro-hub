@@ -18,6 +18,7 @@ public sealed partial class MainWindow : Window
         MacrosPage macros,
         AutoclickerPage autoclicker,
         KeybindsPage keybinds,
+        GateMacroPage gateMacro,
         ManaOverlayPage manaOverlay,
         OverlayPage overlay,
         ProfilesPage profiles,
@@ -41,11 +42,11 @@ public sealed partial class MainWindow : Window
             ["macros"] = macros,
             ["autoclicker"] = autoclicker,
             ["keybinds"] = keybinds,
+            ["gate"] = gateMacro,
             ["overlay"] = overlay,
             ["profiles"] = profiles,
             ["settings"] = settings,
             ["mana"] = manaOverlay,
-            ["gate"] = new PlannedMacroPage("Gate Macro", "Gate automation is planned and is not presented as active yet."),
             ["cooldowns"] = new PlannedMacroPage("Cooldown Indicators", "A reusable cooldown engine and indicators are planned for Phase 3.")
         };
 

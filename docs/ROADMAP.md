@@ -20,7 +20,7 @@
 
 ## Phase 3 — additional modules
 
-- Gate macro
+- Completed: profile-scoped Gate Macro notation editor and exact Roblox chat expansion
 - Shared cooldown engine and indicators
 - Profile import/export, duplication, and richer activation rules
 - Additional macro modules with capability/availability checks

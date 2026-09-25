@@ -50,6 +50,7 @@ public partial class App : Application
         services.AddSingleton<MacrosViewModel>();
         services.AddSingleton<AutoclickerViewModel>();
         services.AddSingleton<KeybindsViewModel>();
+        services.AddSingleton<GateMacroViewModel>();
         services.AddSingleton<ManaOverlayViewModel>();
         services.AddSingleton<ProfilesViewModel>();
         services.AddSingleton<SettingsViewModel>();
@@ -58,6 +59,7 @@ public partial class App : Application
         services.AddSingleton<MacrosPage>();
         services.AddSingleton<AutoclickerPage>();
         services.AddSingleton<KeybindsPage>();
+        services.AddSingleton<GateMacroPage>();
         services.AddSingleton<ManaOverlayPage>();
         services.AddSingleton<OverlayPage>();
         services.AddSingleton<ProfilesPage>();

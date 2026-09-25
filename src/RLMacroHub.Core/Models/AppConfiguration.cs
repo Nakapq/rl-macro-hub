@@ -4,12 +4,13 @@ namespace RLMacroHub.Core.Models;
 
 public sealed class AppConfiguration
 {
-    public const int CurrentSchemaVersion = 5;
+    public const int CurrentSchemaVersion = 6;
 
     public int SchemaVersion { get; set; } = CurrentSchemaVersion;
     public GeneralConfiguration General { get; set; } = new();
     public AutoclickerConfiguration Autoclicker { get; set; } = new();
     public KeybindConfiguration Keybinds { get; set; } = new();
+    public GateMacroConfiguration GateMacro { get; set; } = new();
     public ManaOverlayConfiguration ManaOverlay { get; set; } = new();
     public OverlayConfiguration Overlay { get; set; } = new();
 
@@ -21,6 +22,7 @@ public sealed class AppConfiguration
         General ??= new();
         Autoclicker ??= new();
         Keybinds ??= new();
+        GateMacro ??= new();
         ManaOverlay ??= new();
         Overlay ??= new();
 
@@ -32,6 +34,7 @@ public sealed class AppConfiguration
         Autoclicker.InventoryPanel.ValidateAndNormalize();
         General.ActiveProfileId = Normalize(General.ActiveProfileId, "default");
         Keybinds.Bindings ??= [];
+        GateMacro.ValidateAndNormalize();
         ManaOverlay.ValidateAndNormalize();
         ManaOverlay.MigrateFrom(previousSchemaVersion);
         ManaOverlay.ValidateAndNormalize();
@@ -48,6 +51,109 @@ public sealed class AppConfiguration
 
     private static string Normalize(string? value, string fallback) =>
         string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
+}
+
+public sealed class GateMacroConfiguration
+{
+    public const int MaximumMappings = 100;
+
+    public bool Enabled { get; set; } = true;
+    public ObservableCollection<GateLocationMapping> Mappings { get; set; } = CreateDefaultMappings();
+
+    public static ObservableCollection<GateLocationMapping> CreateDefaultMappings() =>
+    [
+        new("d1", "desert 1"),
+        new("d2", "desert 2"),
+        new("d3", "desert 3"),
+        new("d4", "desert 4"),
+        new("d5", "desert 5"),
+        new("t1", "tundra 1"),
+        new("t2", "tundra 2"),
+        new("t3", "tundra 3"),
+        new("t4", "tundra 4"),
+        new("t5", "tundra 5"),
+        new("t6", "tundra 6"),
+        new("t7", "tundra 7"),
+        new("f1", "forest 1"),
+        new("f2", "forest 2"),
+        new("f3", "forest 3"),
+        new("f4", "forest 4"),
+        new("f5", "forest 5"),
+        new("df1", "deepforest 1"),
+        new("df2", "deepforest 2"),
+        new("df3", "deepforest 3"),
+        new("df4", "deepforest 4"),
+        new("df5", "deepforest 5"),
+        new("s1", "shore 1"),
+        new("s2", "shore 2"),
+        new("s3", "shore 3"),
+        new("s4", "shore 4"),
+        new("j1", "jungle 1"),
+        new("j2", "jungle 2"),
+        new("p1", "plains 1"),
+        new("p2", "plains 2"),
+        new("p3", "plains 3"),
+        new("fo1", "forge 1"),
+        new("fo2", "forge 2"),
+        new("fo3", "forge 3"),
+        new("fo4", "forge 4"),
+        new("sn", "snail"),
+        new("sky", "skycastle"),
+        new("sig", "sigil")
+    ];
+
+    public void ValidateAndNormalize()
+    {
+        Mappings ??= [];
+        HashSet<string> notations = new(StringComparer.OrdinalIgnoreCase);
+        ObservableCollection<GateLocationMapping> normalized = [];
+        foreach (GateLocationMapping? mapping in Mappings)
+        {
+            if (mapping is null || normalized.Count >= MaximumMappings)
+            {
+                continue;
+            }
+
+            string notation = (mapping.Notation ?? string.Empty).Trim().ToLowerInvariant();
+            string location = (mapping.Location ?? string.Empty)
+                .Replace('\r', ' ')
+                .Replace('\n', ' ')
+                .Trim();
+            if (!GateLocationMapping.IsValidNotation(notation)
+                || location.Length is < 1 or > GateLocationMapping.MaximumLocationLength
+                || !notations.Add(notation))
+            {
+                continue;
+            }
+
+            normalized.Add(new GateLocationMapping(notation, location));
+        }
+
+        Mappings = normalized;
+    }
+}
+
+public sealed class GateLocationMapping
+{
+    public const int MaximumNotationLength = 20;
+    public const int MaximumLocationLength = 120;
+
+    public GateLocationMapping() { }
+
+    public GateLocationMapping(string notation, string location)
+    {
+        Notation = notation;
+        Location = location;
+    }
+
+    public string Notation { get; set; } = string.Empty;
+    public string Location { get; set; } = string.Empty;
+
+    public static bool IsValidNotation(string? notation) =>
+        !string.IsNullOrWhiteSpace(notation)
+        && notation.Length <= MaximumNotationLength
+        && notation.All(character => char.IsAsciiLetterOrDigit(character) || character is '-' or '_');
+
 }
 
 public sealed class ManaOverlayConfiguration

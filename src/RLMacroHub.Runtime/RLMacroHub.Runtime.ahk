@@ -12,6 +12,7 @@
 #Include "Modules\InventoryController.ahk"
 #Include "Modules\AutoclickerModule.ahk"
 #Include "Modules\AbilitySelectionController.ahk"
+#Include "Modules\GateMacroModule.ahk"
 #Include "Modules\InputCoordinator.ahk"
 #Include "Modules\KeybindModule.ahk"
 #Include "Modules\ManaOverlay.ahk"
@@ -65,8 +66,9 @@ class MacroRuntime {
         this.Inventory := InventoryController(this.State, this.Configuration, this.Context, this.Logger)
         this.Autoclicker := AutoclickerModule(this.State, this.Configuration.Autoclicker, this.Context, this.InventoryPanel, this.Logger)
         this.AbilitySelection := AbilitySelectionController(this.State, this.Configuration.AbilitySlots, this.Context, this.Autoclicker, this.Logger)
+        this.GateMacro := GateMacroModule(this.State, this.Configuration.GateMacro, this.Context, this.Logger)
         this.Inventory.AttachAutoclicker(this.Autoclicker)
-        this.Input := InputCoordinator(this.State, this.Configuration, this.Context, this.Inventory, this.AbilitySelection, this.Autoclicker, this.Logger)
+        this.Input := InputCoordinator(this.State, this.Configuration, this.Context, this.Inventory, this.AbilitySelection, this.GateMacro, this.Autoclicker, this.Logger)
         this.Keybinds := KeybindModule(this.State, this.Configuration.Keybinds, this.Context, this.Inventory, this.AbilitySelection, this.Logger)
         this.ManaOverlay := ManaOverlay(this.Configuration.ManaOverlay, this.Context, this.Logger, baseDirectory "\Assets\ManaOverlay.png")
         this.Overlay := StatusOverlay(this.State, this.Configuration.Overlay, this.Context, this.Logger)
@@ -83,6 +85,7 @@ class MacroRuntime {
 
         this.Started := true
         this.TimerResolution.Acquire()
+        this.GateMacro.Start()
         this.Input.Register()
         this.Keybinds.Register()
         this.Overlay.Create()
@@ -93,7 +96,7 @@ class MacroRuntime {
         SetTimer this.OverlayTimer, 250
         OnExit this.ExitHandler
         this.ConfigureTrayMenu()
-        this.Logger.Info("Runtime started with " this.Configuration.Keybinds.Bindings.Length " binding(s).")
+        this.Logger.Info("Runtime started with " this.Configuration.Keybinds.Bindings.Length " binding(s) and " this.Configuration.GateMacro.Mappings.Count " gate mapping(s).")
     }
 
     ConfigureTrayMenu() {
@@ -107,6 +110,7 @@ class MacroRuntime {
     }
 
     TickOverlays(*) {
+        this.GateMacro.Tick()
         this.Overlay.Tick()
         this.ManaOverlay.Tick()
         this.InventoryPanelOverlay.Tick()
@@ -123,6 +127,7 @@ class MacroRuntime {
         try SetTimer this.CpsTimer, 0
         try SetTimer this.OverlayTimer, 0
         try this.Input.Unregister()
+        try this.GateMacro.Dispose()
         try this.Keybinds.Unregister()
         try this.Overlay.Destroy()
         try this.ManaOverlay.Destroy()

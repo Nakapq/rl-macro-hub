@@ -1,6 +1,6 @@
 # Project status
 
-Last updated: 2026-09-06
+Last updated: 2026-09-20
 
 ## Created
 
@@ -14,6 +14,7 @@ Last updated: 2026-09-06
 - Configuration defaults, validation, async atomic persistence, and malformed-file recovery
 - Dashboard state changes from Roblox/runtime services, with prominent runtime Start/Stop controls
 - Explicit-save autoclicker and mana-overlay settings, twelve named two-state ability slots, and dynamic validated bindings
+- Profile-scoped Gate Macro settings with validated notation/location mappings and exact case-insensitive Roblox chat expansion
 - Default/profile CRUD safeguards, automatic activation on create, active-profile write-back for Autoclicker, Mana Overlay, and Keybinds, global-setting preservation, and UI refresh on profile switch
 - AutoHotkey v2-only discovery, isolated staging/configuration, duplicate prevention, graceful shutdown, fallback termination
 - Shared-state AHK v2 modules for input, inventory, ability selection, chat-safe slot handling, client-relative inventory-panel hit-testing and optional click-through border, remaps, QPC clicking, Roblox context, timer resolution, logging, autoclicker HUD, and PNG mana guide
@@ -26,7 +27,7 @@ Last updated: 2026-09-06
 
 - `dotnet restore RLMacroHub.sln`: **succeeded** for all four projects.
 - `dotnet build RLMacroHub.sln -c Debug -p:Platform=x64 --no-restore`: **succeeded**, 0 warnings and 0 errors.
-- `dotnet test RLMacroHub.sln --no-build --no-restore -p:Platform=x64`: **passed 19/19**, 0 failed/skipped, including full-canvas mana migration/settings validation, HUD default migration, and profile switching/recovery behavior.
+- Release test project: **passed 33/33**, 0 failed/skipped, including Gate Macro normalization, JSON round trips, INI projection, profile switching, and existing recovery behavior.
 - AutoHotkey v2 `--self-test`: **passed** using the installed v2 interpreter without registering hooks or sending input.
 - AutoHotkey v2 `--smoke-test`: **passed**; normal modules/hooks/timers initialized, no Roblox/input was simulated, and `OnExit` logged clean shutdown with code 0.
 - AutoHotkey v2 mana overlay probe: **passed**; the byte-identical PNG was decoded into an off-screen GDI+ layered window, scaled to 1920 × 1080, presented with per-pixel alpha, and cleaned up with code 0.

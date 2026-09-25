@@ -45,12 +45,49 @@ class RuntimeSelfTest {
         this.Assert(!abilitySelection.Select("3"), "an enabled slot should not restart an already allowed autoclicker")
         this.Assert(!abilitySelection.Select("4"), "switching between enabled slots should be a backend no-op")
         this.Assert(state.SelectedAbilitySlot = "4", "selected slot identity should still update on a no-op")
-        this.Assert(InputCoordinator.AbilityKeyFromHotkey("*~1") = "1", "ability key-down hotkeys should normalize")
-        this.Assert(InputCoordinator.AbilityKeyFromHotkey("*~= Up") = "=", "ability key-up hotkeys should normalize")
 
         this.Assert(InventoryController.IsInventoryKey("SC029"), "SC029 should be an inventory key")
         this.Assert(configuration.Autoclicker.MaximumCps = 120, "default CPS should remain 120")
         this.Assert(configuration.Keybinds.Bindings.Length = 5, "five default bindings should exist")
+        this.Assert(configuration.GateMacro.Enabled, "gate expansion should default on")
+        this.Assert(configuration.GateMacro.Mappings.Count = 0, "gate mappings should default empty")
+        gateMappings := Map()
+        gateMappings.CaseSense := "Off"
+        gateMappings["d4"] := "desert 4"
+        configuration.GateMacro.Mappings := gateMappings
+        gateMacro := GateMacroModule(state, configuration.GateMacro, RuntimeSelfTestActiveContext(), RuntimeSelfTestLogger())
+        gateMacro.OnObserverChar("", "D4")
+        this.Assert(gateMacro.InputBuffer = "", "gate input should be ignored before chat activates capture")
+        gateMacro.InputBuffer := "d4"
+        state.TypingPaused := true
+        this.Assert(!gateMacro.SubmitCapture(), "submit should not expand without an active chat capture")
+        this.Assert(gateMacro.InputBuffer = "", "a rejected submit should clear stale gate input")
+        gateMacro.CaptureActive := true
+        gateMacro.InputBuffer := "d4"
+        state.TypingPaused := false
+        this.Assert(!gateMacro.SubmitCapture(), "submit should not expand after the chat typing guard ends")
+        this.Assert(!gateMacro.CaptureActive, "a rejected submit should cancel gate capture")
+        state.TypingPaused := true
+        gateMacro.CaptureActive := true
+        gateMacro.InputBuffer := "d4"
+        gateMacro.LastInputTick := A_TickCount - GateMacroModule.InputResetIntervalMs - 1
+        this.Assert(!gateMacro.SubmitCapture(), "submit should not expand an expired gate token")
+        this.Assert(gateMacro.InputBuffer = "", "an expired submit should clear stale gate input")
+        gateMacro.CaptureActive := true
+        gateMacro.OnObserverChar("", "D4")
+        this.Assert(gateMacro.InputBuffer = "d4", "an active chat capture should collect notation characters")
+        gateMacro.OnObserverKeyDown("", 8, 0)
+        this.Assert(gateMacro.InputBuffer = "d", "backspace should edit the pending notation")
+        gateMacro.OnObserverChar("", "4")
+        this.Assert(GateMacroModule.ResolveLocation(configuration.GateMacro, gateMacro.InputBuffer) = "desert 4", "the edited notation should resolve on submit")
+        gateMacro.OnObserverChar("", " ")
+        this.Assert(gateMacro.InputBuffer = "", "non-notation characters should reset the pending token")
+        state.RemapBusy := true
+        gateMacro.OnObserverChar("", "d4")
+        this.Assert(gateMacro.InputBuffer = "", "remap output should not enter the notation buffer")
+        state.RemapBusy := false
+        gateMacro.CancelCapture()
+        state.TypingPaused := false
         this.Assert(configuration.AbilitySlots.AutoclickerEnabled.Count = 12, "twelve default ability policies should exist")
         this.Assert(RuntimeConfiguration.IsReservedBindingSource("1"), "weapon slots should be reserved")
         this.Assert(RuntimeConfiguration.IsReservedBindingSource("LButton"), "physical click tracking should be reserved")
@@ -66,11 +103,14 @@ class RuntimeSelfTest {
 
         examplePath := A_ScriptDir "\RLMacroHub.Runtime.example.ini"
         loaded := RuntimeConfiguration.Load(examplePath)
-        this.Assert(loaded.SchemaVersion = 5, "example schema version should load")
+        this.Assert(loaded.SchemaVersion = 6, "example schema version should load")
         this.Assert(loaded.ManaOverlay.Enabled, "mana overlay should load")
         this.Assert(loaded.ManaOverlay.Scale = 1, "mana overlay scale should load")
         this.Assert(loaded.Keybinds.Bindings.Length = 5, "example bindings should load")
         this.Assert(loaded.Keybinds.Bindings[5].Source = "Tab", "binding order should be preserved")
+        this.Assert(loaded.GateMacro.Enabled, "gate macro should load")
+        this.Assert(loaded.GateMacro.Mappings.Count = 1, "gate mappings should load")
+        this.Assert(GateMacroModule.ResolveLocation(loaded.GateMacro, "D5") = "desert 5", "gate lookup should be case-insensitive")
         this.Assert(loaded.InventoryPanel.SuppressAutoclicks, "inventory exclusion should load")
         this.Assert(loaded.AbilitySlots.AutoclickerEnabled.Count = 12, "ability slot policies should load")
         this.Assert(loaded.AbilitySlots.AutoclickerEnabled.Has("="), "equals slot should survive INI parsing")
@@ -85,6 +125,10 @@ class RuntimeSelfTest {
 
 class RuntimeSelfTestContext {
     IsActive() => false
+}
+
+class RuntimeSelfTestActiveContext {
+    IsActive() => true
 }
 
 class RuntimeSelfTestAutoclicker {

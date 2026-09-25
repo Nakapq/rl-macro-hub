@@ -80,6 +80,8 @@ public sealed class ProfileServiceTests
         settings.Current.General.AutoHotkeyExecutablePath = @"C:\Tools\AutoHotkey64.exe";
         settings.Current.Autoclicker.MaximumCps = 90;
         settings.Current.Keybinds.Bindings = [new KeyBinding("q", "1")];
+        settings.Current.GateMacro.Enabled = true;
+        settings.Current.GateMacro.Mappings = [new GateLocationMapping("d5", "desert 5")];
         settings.Current.Overlay.ClickThrough = true;
         await settings.SaveAsync(settings.Current);
         await service.SaveActiveSettingsAsync();
@@ -89,6 +91,8 @@ public sealed class ProfileServiceTests
         settings.Current.General.AutoHotkeyExecutablePath = @"D:\AHK\AutoHotkey64.exe";
         settings.Current.Autoclicker.MaximumCps = 45;
         settings.Current.Keybinds.Bindings = [new KeyBinding("e", "2")];
+        settings.Current.GateMacro.Enabled = false;
+        settings.Current.GateMacro.Mappings = [new GateLocationMapping("c2", "castle 2")];
         settings.Current.Overlay.ClickThrough = false;
         await settings.SaveAsync(settings.Current);
         await service.SaveActiveSettingsAsync();
@@ -97,12 +101,16 @@ public sealed class ProfileServiceTests
         Assert.Equal(90, settings.Current.Autoclicker.MaximumCps);
         Assert.Equal("q", Assert.Single(settings.Current.Keybinds.Bindings).Source);
         Assert.True(settings.Current.Overlay.ClickThrough);
+        Assert.True(settings.Current.GateMacro.Enabled);
+        Assert.Equal("d5", Assert.Single(settings.Current.GateMacro.Mappings).Notation);
         Assert.Equal(@"D:\AHK\AutoHotkey64.exe", settings.Current.General.AutoHotkeyExecutablePath);
 
         await service.SelectAsync(alternate.Id);
         Assert.Equal(45, settings.Current.Autoclicker.MaximumCps);
         Assert.Equal("e", Assert.Single(settings.Current.Keybinds.Bindings).Source);
         Assert.False(settings.Current.Overlay.ClickThrough);
+        Assert.False(settings.Current.GateMacro.Enabled);
+        Assert.Equal("c2", Assert.Single(settings.Current.GateMacro.Mappings).Notation);
         Assert.Equal(@"D:\AHK\AutoHotkey64.exe", settings.Current.General.AutoHotkeyExecutablePath);
     }
 

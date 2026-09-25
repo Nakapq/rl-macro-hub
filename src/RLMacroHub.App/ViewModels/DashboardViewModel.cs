@@ -52,6 +52,9 @@ public sealed partial class DashboardViewModel : ObservableObject
     [ObservableProperty]
     private string _keybindSummary = "5 bindings";
 
+    [ObservableProperty]
+    private string _gateMacroSummary = "0 mappings";
+
     public DashboardViewModel(
         ISettingsService settings,
         IRobloxWindowService roblox,
@@ -80,6 +83,7 @@ public sealed partial class DashboardViewModel : ObservableObject
 
     public string AutoclickerState => _settings.Current.Autoclicker.Enabled ? "Enabled" : "Disabled";
     public string KeybindState => _settings.Current.Keybinds.Enabled ? "Enabled" : "Disabled";
+    public string GateMacroState => _settings.Current.GateMacro.Enabled ? "Enabled" : "Disabled";
     public string ManaOverlayState => _settings.Current.ManaOverlay.Enabled ? "Enabled" : "Disabled";
 
     [RelayCommand]
@@ -145,8 +149,10 @@ public sealed partial class DashboardViewModel : ObservableObject
     {
         AutoclickerSummary = $"{configuration.Autoclicker.MaximumCps} CPS max";
         KeybindSummary = $"{configuration.Keybinds.Bindings.Count} bindings";
+        GateMacroSummary = $"{configuration.GateMacro.Mappings.Count} mappings";
         OnPropertyChanged(nameof(AutoclickerState));
         OnPropertyChanged(nameof(KeybindState));
+        OnPropertyChanged(nameof(GateMacroState));
         OnPropertyChanged(nameof(ManaOverlayState));
     }
 

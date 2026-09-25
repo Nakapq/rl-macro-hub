@@ -17,6 +17,7 @@ RLMacroHub.Runtime.ahk
 │   ├── ManaOverlay.ahk
 │   ├── InventoryController.ahk
 │   ├── AbilitySelectionController.ahk
+│   ├── GateMacroModule.ahk
 │   ├── InputCoordinator.ahk
 │   ├── KeybindModule.ahk
 │   ├── AutoclickerModule.ahk
@@ -44,6 +45,8 @@ All modules receive the same state object. The important invariants remain:
 - Remaps remain available in inventory and update inventory state when their target is the inventory key.
 - Closing inventory can force the master state enabled and resumes an already-held LMB only when the selected ability permits it.
 - Modifier chords pass through instead of being needlessly remapped.
+- Chat typing suppression is independent of the Gate Macro setting. `/` marks the runtime as typing-paused, so autoclicking stops and bound sources pass through unchanged; Enter or Escape clears the pause without changing the master enabled state.
+- Gate notation capture begins only when `/` opens Roblox chat. Enter compares the current token against the configured map without case sensitivity, replaces an exact match, and only then sends Enter to Roblox. Escape, Enter, a physical click, or loss of Roblox focus ends the capture so it cannot span ordinary gameplay. Unmatched chat text is submitted unchanged.
 - The QPC scheduler emits at most one due click and resets a late deadline, never replaying missed clicks as a burst.
 - Scheduler waits use a reusable Windows high-resolution waitable timer. This avoids the approximately 15.4 ms effective `Sleep 1` interval observed on the development machine, which had limited a nominal 120 CPS setting to roughly 65 CPS.
 
@@ -58,6 +61,8 @@ The app's JSON document remains canonical. `RuntimeIniAdapter` creates `RLMacroH
 - `[AbilitySlots]`: the twelve fixed slot keys and their boolean autoclick policies
 - `[Keybinds]`: enabled state and dynamic binding count
 - `[Bindings]`: numbered source/target pairs with no legacy ten-row limit
+- `[GateMacro]`: enabled state and mapping count
+- `[GateMappings]`: numbered notation/location pairs used for exact chat expansion
 - `[Overlay]`: transitional HUD visibility, click-through behavior, size, and Roblox-relative offsets
 - `[ManaOverlay]`: visibility, normalized client position, scale, and opacity for the PNG mana guide
 
@@ -71,7 +76,9 @@ The client rectangle is cached for 100 ms while the inventory is open; cursor hi
 
 Ability display names intentionally stay in canonical JSON/profile files and are never exported to AHK. Slot keys are the stable identity; names are optional organizational labels. All slots default to allowing autoclicking so an older configuration preserves its behavior until the user opts specific abilities out.
 
-The loader validates ranges, skips incomplete/duplicate/conflicting bindings, and restores defaults if parsing fails. Runtime configuration is read once at startup; the tray's Reload command restarts the process. Live configuration reload should arrive with structured IPC.
+Gate notations accept 1–20 ASCII letters, digits, hyphens, or underscores and are unique without regard to case. Prefix pairs such as `d5` and `d50` may coexist because lookup happens only on Enter. Locations accept up to 120 characters. After `/` opens chat, a visible `InputHook` keeps the most recent notation-shaped token; non-notation characters and a five-second typing gap reset the token. Submission requires both the active capture and the chat typing guard. On Enter, an exact match is selected and replaced through a temporary clipboard paste, the original clipboard contents are restored, and Enter is sent afterward. The capture is cancelled on Enter, Escape, physical click, Roblox focus loss, shutdown, or hook failure. This avoids character-level remaps interfering with location names while preventing gameplay input from reaching the replacement path.
+
+The loader validates ranges, skips incomplete/duplicate/conflicting bindings and gate mappings, and restores defaults if parsing fails. Runtime configuration is read once at startup; the tray's Reload command restarts the process. Live configuration reload should arrive with structured IPC.
 
 State-observer sources are currently reserved: `/`, Enter/Escape, `SC029`, LMB, and the number-row ability keys. The WinUI editor rejects these as remap sources so a dynamic registration cannot replace a state-critical observer. They remain valid remap targets. A future centralized multi-subscriber hotkey router can relax this restriction safely.
 

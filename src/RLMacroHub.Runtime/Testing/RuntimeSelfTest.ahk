@@ -57,7 +57,25 @@ class RuntimeSelfTest {
         configuration.GateMacro.Mappings := gateMappings
         gateMacro := GateMacroModule(state, configuration.GateMacro, RuntimeSelfTestActiveContext(), RuntimeSelfTestLogger())
         gateMacro.OnObserverChar("", "D4")
-        this.Assert(gateMacro.InputBuffer = "d4", "the Roblox-wide observer should collect notation characters")
+        this.Assert(gateMacro.InputBuffer = "", "gate input should be ignored before chat activates capture")
+        gateMacro.InputBuffer := "d4"
+        state.TypingPaused := true
+        this.Assert(!gateMacro.SubmitCapture(), "submit should not expand without an active chat capture")
+        this.Assert(gateMacro.InputBuffer = "", "a rejected submit should clear stale gate input")
+        gateMacro.CaptureActive := true
+        gateMacro.InputBuffer := "d4"
+        state.TypingPaused := false
+        this.Assert(!gateMacro.SubmitCapture(), "submit should not expand after the chat typing guard ends")
+        this.Assert(!gateMacro.CaptureActive, "a rejected submit should cancel gate capture")
+        state.TypingPaused := true
+        gateMacro.CaptureActive := true
+        gateMacro.InputBuffer := "d4"
+        gateMacro.LastInputTick := A_TickCount - GateMacroModule.InputResetIntervalMs - 1
+        this.Assert(!gateMacro.SubmitCapture(), "submit should not expand an expired gate token")
+        this.Assert(gateMacro.InputBuffer = "", "an expired submit should clear stale gate input")
+        gateMacro.CaptureActive := true
+        gateMacro.OnObserverChar("", "D4")
+        this.Assert(gateMacro.InputBuffer = "d4", "an active chat capture should collect notation characters")
         gateMacro.OnObserverKeyDown("", 8, 0)
         this.Assert(gateMacro.InputBuffer = "d", "backspace should edit the pending notation")
         gateMacro.OnObserverChar("", "4")
@@ -68,6 +86,8 @@ class RuntimeSelfTest {
         gateMacro.OnObserverChar("", "d4")
         this.Assert(gateMacro.InputBuffer = "", "remap output should not enter the notation buffer")
         state.RemapBusy := false
+        gateMacro.CancelCapture()
+        state.TypingPaused := false
         this.Assert(configuration.AbilitySlots.AutoclickerEnabled.Count = 12, "twelve default ability policies should exist")
         this.Assert(RuntimeConfiguration.IsReservedBindingSource("1"), "weapon slots should be reserved")
         this.Assert(RuntimeConfiguration.IsReservedBindingSource("LButton"), "physical click tracking should be reserved")

@@ -9,7 +9,7 @@
                 <TextBlock Text="Gate Macro" Style="{StaticResource PageTitleTextStyle}" />
                 <TextBlock Text="Expand short gate notations into full locations while using Roblox chat." Style="{StaticResource MutedTextStyle}" />
             </StackPanel>
-            <InfoBar IsOpen="True" IsClosable="False" Severity="Informational" Title="Roblox chat workflow" Message="Type or edit an exact notation in any Roblox chat or destination prompt. The mapping is expanded only when you press Enter, then submitted. Gate-slot detection is not required." />
+            <InfoBar IsOpen="True" IsClosable="False" Severity="Informational" Title="Roblox chat workflow" Message="Press / to open chat, then type or edit an exact notation. The mapping is expanded only when you press Enter, then submitted. Clicking elsewhere, pressing Escape, or leaving Roblox cancels capture." />
             <ToggleSwitch Header="Gate notation expansion enabled" IsOn="{x:Bind ViewModel.Enabled, Mode=TwoWay}" />
             <Border Style="{StaticResource CardStyle}" Padding="18">
                 <StackPanel Spacing="10">

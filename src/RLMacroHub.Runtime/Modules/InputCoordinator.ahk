@@ -52,13 +52,13 @@ class InputCoordinator {
         }
         HotIfWinActive
         this.RegisteredHotkeys := []
-        this.GateMacro.ResetInput()
+        this.GateMacro.CancelCapture()
     }
 
     OnChatStart(*) {
-        this.GateMacro.ResetInput()
         this.State.TypingPaused := true
         this.Autoclicker.HardStop()
+        this.GateMacro.BeginChatCapture()
     }
 
     OnChatEnd(*) {
@@ -69,7 +69,7 @@ class InputCoordinator {
     }
 
     OnEscape(*) {
-        this.GateMacro.ResetInput()
+        this.GateMacro.CancelCapture()
         this.State.TypingPaused := false
         this.Autoclicker.HardStop()
     }
@@ -80,7 +80,9 @@ class InputCoordinator {
     }
 
     OnPhysicalLeftDown(*) {
-        this.GateMacro.ResetInput()
+        ; A click can move focus away from chat. Do not let that capture survive
+        ; into ordinary gameplay even if Roblox never exposes the focus change.
+        this.GateMacro.CancelCapture()
         this.State.PhysicalLButtonDown := true
         this.State.LastPhysicalDownTick := A_TickCount
         this.Autoclicker.Start()

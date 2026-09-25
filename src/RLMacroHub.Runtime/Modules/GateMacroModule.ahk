@@ -7,6 +7,7 @@ class GateMacroModule {
         this.Context := context
         this.Logger := logger
         this.Observer := ""
+        this.CaptureActive := false
         this.InputBuffer := ""
         this.LastInputTick := 0
         this.Disposed := false
@@ -21,9 +22,11 @@ class GateMacroModule {
     }
 
     Tick() {
-        shouldObserve := !this.Disposed
+        shouldObserve := this.CaptureActive
+            && !this.Disposed
             && this.Configuration.Enabled
             && this.Configuration.Mappings.Count > 0
+            && this.State.TypingPaused
             && this.Context.IsActive()
         if shouldObserve {
             if !IsObject(this.Observer) || !this.Observer.InProgress
@@ -31,7 +34,24 @@ class GateMacroModule {
             return
         }
 
-        this.StopObserver()
+        if this.CaptureActive
+            this.CancelCapture()
+        else
+            this.StopObserver()
+    }
+
+    BeginChatCapture() {
+        this.CancelCapture()
+        if this.Disposed
+            || !this.Configuration.Enabled
+            || this.Configuration.Mappings.Count = 0
+            || !this.State.TypingPaused
+            || !this.Context.IsActive()
+            return false
+
+        this.CaptureActive := true
+        this.StartObserver()
+        return this.CaptureActive
     }
 
     StartObserver() {
@@ -48,6 +68,8 @@ class GateMacroModule {
             observer.Start()
         } catch as error {
             this.Observer := ""
+            this.CaptureActive := false
+            this.ResetInput()
             this.Logger.Error("Gate notation observer could not start: " error.Message)
         }
     }
@@ -63,13 +85,17 @@ class GateMacroModule {
     OnObserverEnded(observer) {
         if this.Observer = observer {
             this.Observer := ""
+            this.CaptureActive := false
             this.ResetInput()
         }
     }
 
     OnObserverChar(observer, characters) {
         _ := observer
-        if !this.Context.IsActive() || this.State.RemapBusy
+        if !this.CaptureActive
+            || !this.State.TypingPaused
+            || !this.Context.IsActive()
+            || this.State.RemapBusy
             return
 
         if this.LastInputTick = 0 || A_TickCount - this.LastInputTick > GateMacroModule.InputResetIntervalMs
@@ -91,7 +117,11 @@ class GateMacroModule {
     OnObserverKeyDown(observer, virtualKey, scanCode) {
         _ := observer
         _ := scanCode
-        if virtualKey != 8 || !this.Context.IsActive() || this.State.RemapBusy
+        if virtualKey != 8
+            || !this.CaptureActive
+            || !this.State.TypingPaused
+            || !this.Context.IsActive()
+            || this.State.RemapBusy
             return
 
         length := StrLen(this.InputBuffer)
@@ -100,9 +130,17 @@ class GateMacroModule {
     }
 
     SubmitCapture() {
+        captureWasActive := this.CaptureActive
         notation := this.InputBuffer
-        this.ResetInput()
-        if !this.Configuration.Enabled || !this.Context.IsActive() || notation = ""
+        inputExpired := this.LastInputTick = 0
+            || A_TickCount - this.LastInputTick > GateMacroModule.InputResetIntervalMs
+        this.CancelCapture()
+        if !captureWasActive
+            || !this.State.TypingPaused
+            || !this.Configuration.Enabled
+            || !this.Context.IsActive()
+            || inputExpired
+            || notation = ""
             return false
 
         location := GateMacroModule.ResolveLocation(this.Configuration, notation)
@@ -117,6 +155,11 @@ class GateMacroModule {
     ResetInput() {
         this.InputBuffer := ""
         this.LastInputTick := 0
+    }
+
+    CancelCapture() {
+        this.CaptureActive := false
+        this.StopObserver()
     }
 
     ReplaceVisibleText(location) {
@@ -156,7 +199,7 @@ class GateMacroModule {
 
     Dispose() {
         this.Disposed := true
-        this.StopObserver()
+        this.CancelCapture()
     }
 
     static ResolveLocation(configuration, notation) =>

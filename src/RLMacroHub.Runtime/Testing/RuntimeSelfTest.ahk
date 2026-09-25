@@ -49,6 +49,23 @@ class RuntimeSelfTest {
         this.Assert(InventoryController.IsInventoryKey("SC029"), "SC029 should be an inventory key")
         this.Assert(configuration.Autoclicker.MaximumCps = 120, "default CPS should remain 120")
         this.Assert(configuration.Keybinds.Bindings.Length = 5, "five default bindings should exist")
+        this.Assert(configuration.BackwardsRun.Enabled, "backwards run should default on")
+        this.Assert(configuration.BackwardsRun.Mode = "Legacy", "backwards run should default to legacy mode")
+        this.Assert(
+            BackwardsRunModule.CanActivate(state, configuration.BackwardsRun, true, true),
+            "backwards run should activate for W plus S in focused Roblox")
+        state.TypingPaused := true
+        this.Assert(
+            !BackwardsRunModule.CanActivate(state, configuration.BackwardsRun, true, true),
+            "backwards run should be suppressed while typing")
+        state.TypingPaused := false
+        this.Assert(
+            !BackwardsRunModule.CanActivate(state, configuration.BackwardsRun, true, false),
+            "backwards run should require physical W")
+        this.Assert(BackwardsRunModule.DoubleTapWindowMs = 200, "directional double taps should use the reference 200 ms window")
+        this.Assert(
+            BackwardsRunModule.CanActivate(state, configuration.BackwardsRun, true, false, false),
+            "double-tap mode should create W input without requiring physical W")
         this.Assert(configuration.GateMacro.Enabled, "gate expansion should default on")
         this.Assert(configuration.GateMacro.Mappings.Count = 0, "gate mappings should default empty")
         gateMappings := Map()
@@ -91,6 +108,9 @@ class RuntimeSelfTest {
         this.Assert(configuration.AbilitySlots.AutoclickerEnabled.Count = 12, "twelve default ability policies should exist")
         this.Assert(RuntimeConfiguration.IsReservedBindingSource("1"), "weapon slots should be reserved")
         this.Assert(RuntimeConfiguration.IsReservedBindingSource("LButton"), "physical click tracking should be reserved")
+        this.Assert(RuntimeConfiguration.IsReservedBindingSource("s"), "the backwards-run S trigger should be reserved")
+        this.Assert(RuntimeConfiguration.IsReservedBindingSource("a"), "the backwards-run A trigger should be reserved")
+        this.Assert(RuntimeConfiguration.IsReservedBindingSource("d"), "the backwards-run D trigger should be reserved")
         this.Assert(!RuntimeConfiguration.IsReservedBindingSource("Tab"), "ordinary remap sources should remain available")
         this.Assert(InventoryPanelGuard.ContainsNormalizedPoint(configuration.InventoryPanel, 0.5, 0.5), "inventory center should be excluded")
         this.Assert(!InventoryPanelGuard.ContainsNormalizedPoint(configuration.InventoryPanel, 0.1, 0.5), "screen edge should remain clickable")
@@ -103,7 +123,9 @@ class RuntimeSelfTest {
 
         examplePath := A_ScriptDir "\RLMacroHub.Runtime.example.ini"
         loaded := RuntimeConfiguration.Load(examplePath)
-        this.Assert(loaded.SchemaVersion = 6, "example schema version should load")
+        this.Assert(loaded.SchemaVersion = 8, "example schema version should load")
+        this.Assert(loaded.BackwardsRun.Enabled, "backwards run should load")
+        this.Assert(loaded.BackwardsRun.Mode = "Legacy", "backwards run mode should load")
         this.Assert(loaded.ManaOverlay.Enabled, "mana overlay should load")
         this.Assert(loaded.ManaOverlay.Scale = 1, "mana overlay scale should load")
         this.Assert(loaded.Keybinds.Bindings.Length = 5, "example bindings should load")
@@ -114,7 +136,7 @@ class RuntimeSelfTest {
         this.Assert(loaded.InventoryPanel.SuppressAutoclicks, "inventory exclusion should load")
         this.Assert(loaded.AbilitySlots.AutoclickerEnabled.Count = 12, "ability slot policies should load")
         this.Assert(loaded.AbilitySlots.AutoclickerEnabled.Has("="), "equals slot should survive INI parsing")
-        FileAppend "RL Macro Hub runtime self-test passed.`n", "*"
+        try FileAppend "RL Macro Hub runtime self-test passed.`n", "*"
     }
 
     static Assert(condition, message) {

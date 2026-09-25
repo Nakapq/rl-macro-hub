@@ -62,6 +62,11 @@ public sealed class RuntimeIniAdapter
         }
 
         output.AppendLine();
+        output.AppendLine("[BackwardsRun]");
+        Append(output, "Enabled", configuration.BackwardsRun.Enabled);
+        Append(output, "Mode", configuration.BackwardsRun.Mode.ToString());
+
+        output.AppendLine();
         output.AppendLine("[GateMacro]");
         Append(output, "Enabled", configuration.GateMacro.Enabled);
         Append(output, "MappingCount", configuration.GateMacro.Mappings.Count);

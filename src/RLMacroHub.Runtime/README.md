@@ -1,6 +1,6 @@
 # RL Macro Hub Runtime
 
-This is the modular AutoHotkey v2 runtime. `RLMacroHub.Runtime.ahk` is the only entry point; modules share one `RuntimeState` instance so inventory, ability selection, remapping, gate expansion, typing suppression, and autoclick eligibility cannot drift across processes.
+This is the modular AutoHotkey v2 runtime. `RLMacroHub.Runtime.ahk` is the only entry point; modules share one `RuntimeState` instance so inventory, ability selection, remapping, backwards running, gate expansion, typing suppression, and autoclick eligibility cannot drift across processes.
 
 While inventory is open, autoclicking remains available outside the configured inventory panel. `InventoryPanelGuard` maps normalized panel coordinates into the live Roblox client rectangle and blocks generated clicks only while the pointer is inside it.
 

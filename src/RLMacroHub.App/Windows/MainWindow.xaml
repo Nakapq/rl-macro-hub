@@ -33,6 +33,7 @@
                     <NavigationViewItem.MenuItems>
                         <NavigationViewItem Content="Autoclicker" Tag="autoclicker" />
                         <NavigationViewItem Content="Keybinds" Tag="keybinds" />
+                        <NavigationViewItem Content="Backwards Run" Tag="backwards-run" />
                         <NavigationViewItem Content="Mana Overlay" Tag="mana" />
                         <NavigationViewItem Content="Gate Macro" Tag="gate" />
                         <NavigationViewItem Content="Cooldown Indicators" Tag="cooldowns" />

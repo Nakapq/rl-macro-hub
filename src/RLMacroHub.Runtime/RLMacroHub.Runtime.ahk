@@ -12,6 +12,7 @@
 #Include "Modules\InventoryController.ahk"
 #Include "Modules\AutoclickerModule.ahk"
 #Include "Modules\AbilitySelectionController.ahk"
+#Include "Modules\BackwardsRunModule.ahk"
 #Include "Modules\GateMacroModule.ahk"
 #Include "Modules\InputCoordinator.ahk"
 #Include "Modules\KeybindModule.ahk"
@@ -48,7 +49,7 @@ HasCommandLineArgument(expected) {
 }
 
 SmokeTestExit() {
-    FileAppend "RL Macro Hub runtime smoke test completed.`n", "*"
+    try FileAppend "RL Macro Hub runtime smoke test completed.`n", "*"
     ExitApp 0
 }
 
@@ -66,6 +67,7 @@ class MacroRuntime {
         this.Inventory := InventoryController(this.State, this.Configuration, this.Context, this.Logger)
         this.Autoclicker := AutoclickerModule(this.State, this.Configuration.Autoclicker, this.Context, this.InventoryPanel, this.Logger)
         this.AbilitySelection := AbilitySelectionController(this.State, this.Configuration.AbilitySlots, this.Context, this.Autoclicker, this.Logger)
+        this.BackwardsRun := BackwardsRunModule(this.State, this.Configuration.BackwardsRun, this.Context, this.Logger)
         this.GateMacro := GateMacroModule(this.State, this.Configuration.GateMacro, this.Context, this.Logger)
         this.Inventory.AttachAutoclicker(this.Autoclicker)
         this.Input := InputCoordinator(this.State, this.Configuration, this.Context, this.Inventory, this.AbilitySelection, this.GateMacro, this.Autoclicker, this.Logger)
@@ -87,6 +89,7 @@ class MacroRuntime {
         this.TimerResolution.Acquire()
         this.GateMacro.Start()
         this.Input.Register()
+        this.BackwardsRun.Register()
         this.Keybinds.Register()
         this.Overlay.Create()
         this.ManaOverlay.Create()
@@ -110,6 +113,7 @@ class MacroRuntime {
     }
 
     TickOverlays(*) {
+        this.BackwardsRun.Tick()
         this.GateMacro.Tick()
         this.Overlay.Tick()
         this.ManaOverlay.Tick()
@@ -126,9 +130,10 @@ class MacroRuntime {
         try SetTimer this.MainTimer, 0
         try SetTimer this.CpsTimer, 0
         try SetTimer this.OverlayTimer, 0
+        try this.BackwardsRun.Unregister()
+        try this.Keybinds.Unregister()
         try this.Input.Unregister()
         try this.GateMacro.Dispose()
-        try this.Keybinds.Unregister()
         try this.Overlay.Destroy()
         try this.ManaOverlay.Destroy()
         try this.InventoryPanelOverlay.Destroy()

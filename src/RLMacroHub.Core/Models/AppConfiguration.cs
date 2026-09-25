@@ -1,15 +1,17 @@
 using System.Collections.ObjectModel;
+using System.Text.Json.Serialization;
 
 namespace RLMacroHub.Core.Models;
 
 public sealed class AppConfiguration
 {
-    public const int CurrentSchemaVersion = 6;
+    public const int CurrentSchemaVersion = 8;
 
     public int SchemaVersion { get; set; } = CurrentSchemaVersion;
     public GeneralConfiguration General { get; set; } = new();
     public AutoclickerConfiguration Autoclicker { get; set; } = new();
     public KeybindConfiguration Keybinds { get; set; } = new();
+    public BackwardsRunConfiguration BackwardsRun { get; set; } = new();
     public GateMacroConfiguration GateMacro { get; set; } = new();
     public ManaOverlayConfiguration ManaOverlay { get; set; } = new();
     public OverlayConfiguration Overlay { get; set; } = new();
@@ -22,11 +24,18 @@ public sealed class AppConfiguration
         General ??= new();
         Autoclicker ??= new();
         Keybinds ??= new();
+        BackwardsRun ??= new();
         GateMacro ??= new();
         ManaOverlay ??= new();
         Overlay ??= new();
 
         Autoclicker.ToggleHotkey = Normalize(Autoclicker.ToggleHotkey, "XButton1");
+        if (string.Equals(Autoclicker.ToggleHotkey, "s", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(Autoclicker.ToggleHotkey, "a", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(Autoclicker.ToggleHotkey, "d", StringComparison.OrdinalIgnoreCase))
+        {
+            Autoclicker.ToggleHotkey = "XButton1";
+        }
         Autoclicker.MaximumCps = Math.Clamp(Autoclicker.MaximumCps, 1, 120);
         Autoclicker.HoldThresholdMs = Math.Clamp(Autoclicker.HoldThresholdMs, 0, 1000);
         Autoclicker.NormalizeAbilitySlots();
@@ -34,6 +43,10 @@ public sealed class AppConfiguration
         Autoclicker.InventoryPanel.ValidateAndNormalize();
         General.ActiveProfileId = Normalize(General.ActiveProfileId, "default");
         Keybinds.Bindings ??= [];
+        if (!Enum.IsDefined(BackwardsRun.Mode))
+        {
+            BackwardsRun.Mode = BackwardsRunMode.Legacy;
+        }
         GateMacro.ValidateAndNormalize();
         ManaOverlay.ValidateAndNormalize();
         ManaOverlay.MigrateFrom(previousSchemaVersion);
@@ -51,6 +64,19 @@ public sealed class AppConfiguration
 
     private static string Normalize(string? value, string fallback) =>
         string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
+}
+
+public sealed class BackwardsRunConfiguration
+{
+    public bool Enabled { get; set; } = true;
+    public BackwardsRunMode Mode { get; set; } = BackwardsRunMode.Legacy;
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum BackwardsRunMode
+{
+    Legacy,
+    DoubleTap
 }
 
 public sealed class GateMacroConfiguration

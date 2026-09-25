@@ -19,12 +19,14 @@ public sealed class RuntimeIniAdapterTests
         secondSlot.AutoclickerEnabled = false;
         configuration.GateMacro.Enabled = true;
         configuration.GateMacro.Mappings = [new GateLocationMapping("d5", "desert 5")];
+        configuration.BackwardsRun.Enabled = false;
+        configuration.BackwardsRun.Mode = BackwardsRunMode.DoubleTap;
 
         RuntimeIniAdapter adapter = new(NullLogger<RuntimeIniAdapter>.Instance);
         string ini = adapter.Export(configuration);
 
         Assert.Contains("[Runtime]", ini, StringComparison.Ordinal);
-        Assert.Contains("SchemaVersion=6", ini, StringComparison.Ordinal);
+        Assert.Contains("SchemaVersion=8", ini, StringComparison.Ordinal);
         Assert.Contains("MaximumCps=120", ini, StringComparison.Ordinal);
         Assert.Contains("HoldThresholdMs=30", ini, StringComparison.Ordinal);
         Assert.DoesNotContain("YieldMs", ini, StringComparison.Ordinal);
@@ -42,6 +44,9 @@ public sealed class RuntimeIniAdapterTests
         Assert.Contains("BindingCount=13", ini, StringComparison.Ordinal);
         Assert.Contains("Binding13_Source=F8", ini, StringComparison.Ordinal);
         Assert.Contains("Binding13_Target=Numpad7", ini, StringComparison.Ordinal);
+        Assert.Contains("[BackwardsRun]", ini, StringComparison.Ordinal);
+        Assert.Contains("[BackwardsRun]\r\nEnabled=0", ini, StringComparison.Ordinal);
+        Assert.Contains("Mode=DoubleTap", ini, StringComparison.Ordinal);
         Assert.Contains("[GateMacro]", ini, StringComparison.Ordinal);
         Assert.Contains("Enabled=1", ini, StringComparison.Ordinal);
         Assert.Contains("MappingCount=1", ini, StringComparison.Ordinal);

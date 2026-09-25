@@ -1,11 +1,11 @@
 class RuntimeConfiguration {
-    static CurrentSchemaVersion := 6
+    static CurrentSchemaVersion := 8
     static MaximumGateMappings := 100
     static MaximumGateNotationLength := 20
     static MaximumGateLocationLength := 120
     static AbilitySlotKeys := ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "="]
     static ReservedBindingSources := [
-        "/", "Enter", "Esc", "Escape", "SC029", "LButton",
+        "/", "Enter", "Esc", "Escape", "SC029", "LButton", "s", "a", "d",
         "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "="
     ]
 
@@ -49,6 +49,10 @@ class RuntimeConfiguration {
                     { Source: "Tab", Target: "7" }
                 ]
             },
+            BackwardsRun: {
+                Enabled: true,
+                Mode: "Legacy"
+            },
             GateMacro: {
                 Enabled: true,
                 Mappings: gateMappings
@@ -83,6 +87,13 @@ class RuntimeConfiguration {
         try {
             configuration.SchemaVersion := this.ReadInteger(path, "Runtime", "SchemaVersion", 1, 1, this.CurrentSchemaVersion)
             configuration.General.ToggleHotkey := this.ReadRequired(path, "General", "ToggleHotkey", "XButton1")
+            if configuration.General.ToggleHotkey = "s"
+                || configuration.General.ToggleHotkey = "a"
+                || configuration.General.ToggleHotkey = "d" {
+                configuration.General.ToggleHotkey := "XButton1"
+                if IsObject(logger)
+                    logger.Warn("Toggle hotkeys S, A, and D are reserved for Backwards Run; restored XButton1.")
+            }
 
             configuration.Autoclicker.Enabled := this.ReadBoolean(path, "Autoclicker", "Enabled", true)
             configuration.Autoclicker.MaximumCps := this.ReadInteger(path, "Autoclicker", "MaximumCps", 120, 1, 120)
@@ -147,6 +158,16 @@ class RuntimeConfiguration {
 
                 seenSources[source] := true
                 configuration.Keybinds.Bindings.Push({ Source: source, Target: target })
+            }
+
+            configuration.BackwardsRun.Enabled := this.ReadBoolean(path, "BackwardsRun", "Enabled", true)
+            backwardsRunMode := StrLower(this.ReadRequired(path, "BackwardsRun", "Mode", "Legacy"))
+            if backwardsRunMode = "doubletap" {
+                configuration.BackwardsRun.Mode := "DoubleTap"
+            } else {
+                configuration.BackwardsRun.Mode := "Legacy"
+                if backwardsRunMode != "legacy" && IsObject(logger)
+                    logger.Warn("Invalid Backwards Run mode was reset to Legacy.")
             }
 
             configuration.GateMacro.Enabled := this.ReadBoolean(path, "GateMacro", "Enabled", true)

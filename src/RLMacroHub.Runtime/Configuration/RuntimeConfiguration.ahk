@@ -5,7 +5,7 @@ class RuntimeConfiguration {
     static MaximumGateLocationLength := 120
     static AbilitySlotKeys := ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "="]
     static ReservedBindingSources := [
-        "/", "Enter", "Esc", "Escape", "SC029", "LButton", "s", "a", "d",
+        "/", "Enter", "Esc", "Escape", "SC029", "LButton", "w", "a", "s", "d",
         "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "="
     ]
 
@@ -87,12 +87,13 @@ class RuntimeConfiguration {
         try {
             configuration.SchemaVersion := this.ReadInteger(path, "Runtime", "SchemaVersion", 1, 1, this.CurrentSchemaVersion)
             configuration.General.ToggleHotkey := this.ReadRequired(path, "General", "ToggleHotkey", "XButton1")
-            if configuration.General.ToggleHotkey = "s"
+            if configuration.General.ToggleHotkey = "w"
+                || configuration.General.ToggleHotkey = "s"
                 || configuration.General.ToggleHotkey = "a"
                 || configuration.General.ToggleHotkey = "d" {
                 configuration.General.ToggleHotkey := "XButton1"
                 if IsObject(logger)
-                    logger.Warn("Toggle hotkeys S, A, and D are reserved for Backwards Run; restored XButton1.")
+                    logger.Warn("Toggle hotkeys W, A, S, and D are reserved for Backwards Run; restored XButton1.")
             }
 
             configuration.Autoclicker.Enabled := this.ReadBoolean(path, "Autoclicker", "Enabled", true)
@@ -162,7 +163,9 @@ class RuntimeConfiguration {
 
             configuration.BackwardsRun.Enabled := this.ReadBoolean(path, "BackwardsRun", "Enabled", true)
             backwardsRunMode := StrLower(this.ReadRequired(path, "BackwardsRun", "Mode", "Legacy"))
-            if backwardsRunMode = "doubletap" {
+            if backwardsRunMode = "multidirectional" {
+                configuration.BackwardsRun.Mode := "MultiDirectional"
+            } else if backwardsRunMode = "doubletap" {
                 configuration.BackwardsRun.Mode := "DoubleTap"
             } else {
                 configuration.BackwardsRun.Mode := "Legacy"

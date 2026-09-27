@@ -45,6 +45,23 @@ class RuntimeSelfTest {
         this.Assert(!abilitySelection.Select("3"), "an enabled slot should not restart an already allowed autoclicker")
         this.Assert(!abilitySelection.Select("4"), "switching between enabled slots should be a backend no-op")
         this.Assert(state.SelectedAbilitySlot = "4", "selected slot identity should still update on a no-op")
+        this.Assert(InputCoordinator.AbilityKeyFromHotkey("*~1") = "1", "ability key-down hotkeys should normalize")
+        this.Assert(InputCoordinator.AbilityKeyFromHotkey("*~= Up") = "=", "ability key-up hotkeys should normalize")
+        testGateMacro := RuntimeSelfTestGateMacro()
+        inputHandler := InputCoordinator(
+            state,
+            configuration,
+            "",
+            "",
+            abilitySelection,
+            testGateMacro,
+            testAutoclicker,
+            RuntimeSelfTestLogger())
+        state.TypingPaused := true
+        inputHandler.OnPhysicalLeftDown()
+        this.Assert(!state.TypingPaused, "a physical click should clear stale chat suppression")
+        this.Assert(testGateMacro.CancelCaptureCount = 1, "a physical click should cancel gate capture")
+        this.Assert(testAutoclicker.StartCount = 1, "a physical click should attempt to start autoclicking")
 
         this.Assert(InventoryController.IsInventoryKey("SC029"), "SC029 should be an inventory key")
         this.Assert(configuration.Autoclicker.MaximumCps = 120, "default CPS should remain 120")
@@ -63,6 +80,24 @@ class RuntimeSelfTest {
             !BackwardsRunModule.CanActivate(state, configuration.BackwardsRun, true, false),
             "backwards run should require physical W")
         this.Assert(BackwardsRunModule.DoubleTapWindowMs = 200, "directional double taps should use the reference 200 ms window")
+        this.Assert(BackwardsRunModule.AxisForDirection("w") = "vertical", "W should belong to the vertical run axis")
+        this.Assert(BackwardsRunModule.AxisForDirection("d") = "horizontal", "D should belong to the horizontal run axis")
+        this.Assert(BackwardsRunModule.OppositeDirection("w") = "s", "W should transition to S")
+        this.Assert(BackwardsRunModule.OppositeDirection("s") = "w", "S should transition to W")
+        this.Assert(BackwardsRunModule.OppositeDirection("a") = "d", "A should transition to D")
+        this.Assert(BackwardsRunModule.OppositeDirection("d") = "a", "D should transition to A")
+        this.Assert(
+            BackwardsRunModule.ShouldUseWAsArrowRebind(true, "vertical", true, true),
+            "W should be arrow-only while S owns the synthetic W foundation")
+        this.Assert(
+            !BackwardsRunModule.ShouldUseWAsArrowRebind(false, "vertical", true, true),
+            "ordinary W input should pass through before activation")
+        this.Assert(
+            !BackwardsRunModule.ShouldUseWAsArrowRebind(true, "vertical", false, true),
+            "native W-backed sessions should keep forwarding physical W")
+        this.Assert(
+            !BackwardsRunModule.ShouldUseWAsArrowRebind(true, "horizontal", true, true),
+            "lateral sessions should not consume physical W")
         this.Assert(
             BackwardsRunModule.CanActivate(state, configuration.BackwardsRun, true, false, false),
             "double-tap mode should create W input without requiring physical W")
@@ -108,6 +143,7 @@ class RuntimeSelfTest {
         this.Assert(configuration.AbilitySlots.AutoclickerEnabled.Count = 12, "twelve default ability policies should exist")
         this.Assert(RuntimeConfiguration.IsReservedBindingSource("1"), "weapon slots should be reserved")
         this.Assert(RuntimeConfiguration.IsReservedBindingSource("LButton"), "physical click tracking should be reserved")
+        this.Assert(RuntimeConfiguration.IsReservedBindingSource("w"), "the multi-directional W trigger should be reserved")
         this.Assert(RuntimeConfiguration.IsReservedBindingSource("s"), "the backwards-run S trigger should be reserved")
         this.Assert(RuntimeConfiguration.IsReservedBindingSource("a"), "the backwards-run A trigger should be reserved")
         this.Assert(RuntimeConfiguration.IsReservedBindingSource("d"), "the backwards-run D trigger should be reserved")
@@ -125,7 +161,7 @@ class RuntimeSelfTest {
         loaded := RuntimeConfiguration.Load(examplePath)
         this.Assert(loaded.SchemaVersion = 8, "example schema version should load")
         this.Assert(loaded.BackwardsRun.Enabled, "backwards run should load")
-        this.Assert(loaded.BackwardsRun.Mode = "Legacy", "backwards run mode should load")
+        this.Assert(loaded.BackwardsRun.Mode = "MultiDirectional", "multi-directional backwards run mode should load")
         this.Assert(loaded.ManaOverlay.Enabled, "mana overlay should load")
         this.Assert(loaded.ManaOverlay.Scale = 1, "mana overlay scale should load")
         this.Assert(loaded.Keybinds.Bindings.Length = 5, "example bindings should load")
@@ -157,6 +193,7 @@ class RuntimeSelfTestAutoclicker {
     __New(configuration) {
         this.Configuration := configuration
         this.HardStopCount := 0
+        this.StartCount := 0
     }
 
     HardStop() {
@@ -164,6 +201,17 @@ class RuntimeSelfTestAutoclicker {
     }
 
     Start() {
+        this.StartCount += 1
+    }
+}
+
+class RuntimeSelfTestGateMacro {
+    __New() {
+        this.CancelCaptureCount := 0
+    }
+
+    CancelCapture() {
+        this.CancelCaptureCount += 1
     }
 }
 

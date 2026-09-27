@@ -20,7 +20,7 @@ public sealed class RuntimeIniAdapterTests
         configuration.GateMacro.Enabled = true;
         configuration.GateMacro.Mappings = [new GateLocationMapping("d5", "desert 5")];
         configuration.BackwardsRun.Enabled = false;
-        configuration.BackwardsRun.Mode = BackwardsRunMode.DoubleTap;
+        configuration.BackwardsRun.Mode = BackwardsRunMode.MultiDirectional;
 
         RuntimeIniAdapter adapter = new(NullLogger<RuntimeIniAdapter>.Instance);
         string ini = adapter.Export(configuration);
@@ -46,7 +46,7 @@ public sealed class RuntimeIniAdapterTests
         Assert.Contains("Binding13_Target=Numpad7", ini, StringComparison.Ordinal);
         Assert.Contains("[BackwardsRun]", ini, StringComparison.Ordinal);
         Assert.Contains("[BackwardsRun]\r\nEnabled=0", ini, StringComparison.Ordinal);
-        Assert.Contains("Mode=DoubleTap", ini, StringComparison.Ordinal);
+        Assert.Contains("Mode=MultiDirectional", ini, StringComparison.Ordinal);
         Assert.Contains("[GateMacro]", ini, StringComparison.Ordinal);
         Assert.Contains("Enabled=1", ini, StringComparison.Ordinal);
         Assert.Contains("MappingCount=1", ini, StringComparison.Ordinal);

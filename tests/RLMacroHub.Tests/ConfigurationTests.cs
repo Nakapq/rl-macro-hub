@@ -245,6 +245,7 @@ public sealed class ConfigurationTests
     }
 
     [Theory]
+    [InlineData("W")]
     [InlineData("S")]
     [InlineData("A")]
     [InlineData("D")]

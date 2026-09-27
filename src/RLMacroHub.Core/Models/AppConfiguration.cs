@@ -30,7 +30,8 @@ public sealed class AppConfiguration
         Overlay ??= new();
 
         Autoclicker.ToggleHotkey = Normalize(Autoclicker.ToggleHotkey, "XButton1");
-        if (string.Equals(Autoclicker.ToggleHotkey, "s", StringComparison.OrdinalIgnoreCase)
+        if (string.Equals(Autoclicker.ToggleHotkey, "w", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(Autoclicker.ToggleHotkey, "s", StringComparison.OrdinalIgnoreCase)
             || string.Equals(Autoclicker.ToggleHotkey, "a", StringComparison.OrdinalIgnoreCase)
             || string.Equals(Autoclicker.ToggleHotkey, "d", StringComparison.OrdinalIgnoreCase))
         {
@@ -76,7 +77,8 @@ public sealed class BackwardsRunConfiguration
 public enum BackwardsRunMode
 {
     Legacy,
-    DoubleTap
+    DoubleTap,
+    MultiDirectional
 }
 
 public sealed class GateMacroConfiguration

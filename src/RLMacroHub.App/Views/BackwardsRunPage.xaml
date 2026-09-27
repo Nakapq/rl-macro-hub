@@ -6,7 +6,7 @@
         <StackPanel Padding="36,28,36,48" Spacing="16" MaxWidth="820" HorizontalAlignment="Left">
             <StackPanel Spacing="5">
                 <TextBlock Text="Backwards Run" Style="{StaticResource PageTitleTextStyle}" />
-                <TextBlock Text="Choose the original W + S behavior or directional double-tap movement." Style="{StaticResource MutedTextStyle}" TextWrapping="Wrap" />
+                <TextBlock Text="Choose the original W + S behavior, independent double taps, or opposite-direction transitions." Style="{StaticResource MutedTextStyle}" TextWrapping="Wrap" />
             </StackPanel>
 
             <InfoBar
@@ -20,8 +20,8 @@
                 IsOpen="True"
                 IsClosable="False"
                 Severity="Informational"
-                Title="Double Tap mode"
-                Message="Double-tap A, S, or D within 200 ms; physical W is not required. Every direction taps and holds W, then taps Up. S additionally taps and holds Down. Releasing the activating direction releases the synthetic keys." />
+                Title="Multi-Directional mode"
+                Message="Double-tap W, A, S, or D within 200 ms. The macro establishes a neutral mana run, then keeps a single vertical or horizontal session active. Press the opposite key to change direction; releasing it falls back to the original key if it is still held." />
 
             <Border Style="{StaticResource SettingCardStyle}">
                 <StackPanel Spacing="14">
@@ -30,6 +30,7 @@
                     <ComboBox Header="Activation mode" SelectedIndex="{x:Bind ViewModel.SelectedModeIndex, Mode=TwoWay}" MaxWidth="380" HorizontalAlignment="Stretch">
                         <ComboBoxItem Content="Legacy — hold S while W is active" />
                         <ComboBoxItem Content="Double Tap — double-tap A, S, or D" />
+                        <ComboBoxItem Content="Multi-Directional — double-tap W/A/S/D and transition opposites" />
                     </ComboBox>
                     <TextBlock Text="The hotkey works only while Roblox is focused and the macro runtime is enabled. It is suppressed while chat or another remap is active." Style="{StaticResource MutedTextStyle}" TextWrapping="Wrap" />
                 </StackPanel>

@@ -37,9 +37,12 @@ public sealed partial class BackwardsRunViewModel : ObservableObject
     private async Task SaveAsync()
     {
         _settings.Current.BackwardsRun.Enabled = Enabled;
-        _settings.Current.BackwardsRun.Mode = SelectedModeIndex == 1
-            ? BackwardsRunMode.DoubleTap
-            : BackwardsRunMode.Legacy;
+        _settings.Current.BackwardsRun.Mode = SelectedModeIndex switch
+        {
+            1 => BackwardsRunMode.DoubleTap,
+            2 => BackwardsRunMode.MultiDirectional,
+            _ => BackwardsRunMode.Legacy
+        };
         await _settings.SaveAsync(_settings.Current);
         await _profiles.SaveActiveSettingsAsync();
         await _runtimeIniAdapter.ExportAsync(_settings.Current, _paths.ModernRuntimeConfigurationFile);
@@ -50,7 +53,12 @@ public sealed partial class BackwardsRunViewModel : ObservableObject
     private void LoadFrom(BackwardsRunConfiguration configuration)
     {
         Enabled = configuration.Enabled;
-        SelectedModeIndex = configuration.Mode == BackwardsRunMode.DoubleTap ? 1 : 0;
+        SelectedModeIndex = configuration.Mode switch
+        {
+            BackwardsRunMode.DoubleTap => 1,
+            BackwardsRunMode.MultiDirectional => 2,
+            _ => 0
+        };
     }
 
     private void OnSettingsChanged(object? sender, AppConfiguration configuration)

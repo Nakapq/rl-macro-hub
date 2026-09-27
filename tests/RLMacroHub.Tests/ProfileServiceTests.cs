@@ -94,7 +94,7 @@ public sealed class ProfileServiceTests
         settings.Current.Autoclicker.MaximumCps = 45;
         settings.Current.Keybinds.Bindings = [new KeyBinding("e", "2")];
         settings.Current.BackwardsRun.Enabled = true;
-        settings.Current.BackwardsRun.Mode = BackwardsRunMode.DoubleTap;
+        settings.Current.BackwardsRun.Mode = BackwardsRunMode.MultiDirectional;
         settings.Current.GateMacro.Enabled = false;
         settings.Current.GateMacro.Mappings = [new GateLocationMapping("c2", "castle 2")];
         settings.Current.Overlay.ClickThrough = false;
@@ -116,7 +116,7 @@ public sealed class ProfileServiceTests
         Assert.Equal("e", Assert.Single(settings.Current.Keybinds.Bindings).Source);
         Assert.False(settings.Current.Overlay.ClickThrough);
         Assert.True(settings.Current.BackwardsRun.Enabled);
-        Assert.Equal(BackwardsRunMode.DoubleTap, settings.Current.BackwardsRun.Mode);
+        Assert.Equal(BackwardsRunMode.MultiDirectional, settings.Current.BackwardsRun.Mode);
         Assert.False(settings.Current.GateMacro.Enabled);
         Assert.Equal("c2", Assert.Single(settings.Current.GateMacro.Mappings).Notation);
         Assert.Equal(@"D:\AHK\AutoHotkey64.exe", settings.Current.General.AutoHotkeyExecutablePath);

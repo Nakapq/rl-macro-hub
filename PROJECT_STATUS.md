@@ -1,6 +1,6 @@
 # Project status
 
-Last updated: 2026-09-25
+Last updated: 2026-09-27
 
 ## Created
 
@@ -15,7 +15,7 @@ Last updated: 2026-09-25
 - Dashboard state changes from Roblox/runtime services, with prominent runtime Start/Stop controls
 - Explicit-save autoclicker and mana-overlay settings, twelve named two-state ability slots, and dynamic validated bindings
 - Profile-scoped Gate Macro settings with validated notation/location mappings and exact case-insensitive Roblox chat expansion
-- Profile-scoped Backwards Run mode with Roblox-only, chat-safe legacy `W` + `S` and double-tap `A`/`S`/`D` movement sequences
+- Profile-scoped Backwards Run modes with Roblox-only, chat-safe legacy `W` + `S`, independent double-tap `A`/`S`/`D`, and multi-directional `W`/`A`/`S`/`D` activation with opposite-axis transitions and held-key fallback
 - Default/profile CRUD safeguards, automatic activation on create, active-profile write-back for Autoclicker, Backwards Run, Gate Macro, Mana Overlay, and Keybinds, global-setting preservation, and UI refresh on profile switch
 - AutoHotkey v2-only discovery, isolated staging/configuration, duplicate prevention, graceful shutdown, fallback termination
 - Shared-state AHK v2 modules for input, inventory, ability selection, chat-safe slot handling, client-relative inventory-panel hit-testing and optional click-through border, remaps, QPC clicking, Roblox context, timer resolution, logging, autoclicker HUD, and PNG mana guide
@@ -28,7 +28,7 @@ Last updated: 2026-09-25
 
 - `dotnet restore RLMacroHub.sln`: **succeeded** for all four projects.
 - `dotnet build RLMacroHub.sln -c Debug -p:Platform=x64 --no-restore`: **succeeded**, 0 warnings and 0 errors.
-- Test project: **passed 38/38**, 0 failed/skipped, including Backwards Run mode persistence/INI projection, reserved-hotkey validation, Gate Macro normalization, profile switching, and existing recovery behavior.
+- Test project: **passed 39/39**, 0 failed/skipped, including Multi-Directional Backwards Run persistence/INI projection, reserved-hotkey validation, Gate Macro normalization, profile switching, and existing recovery behavior.
 - AutoHotkey v2 `--self-test`: **passed** using the installed v2 interpreter without registering hooks or sending input.
 - AutoHotkey v2 `--smoke-test`: **passed**; normal modules/hooks/timers initialized, no Roblox/input was simulated, and `OnExit` logged clean shutdown with code 0.
 - AutoHotkey v2 mana overlay probe: **passed**; the byte-identical PNG was decoded into an off-screen GDI+ layered window, scaled to 1920 × 1080, presented with per-pixel alpha, and cleaned up with code 0.

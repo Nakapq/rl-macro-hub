@@ -118,7 +118,7 @@ class InputCoordinator {
     }
 
     static AbilityKeyFromHotkey(hotkeyName) => RegExReplace(
-        RegExReplace(hotkeyName, "i) Up$"),
+        RegExReplace(hotkeyName, "i)\s+Up$"),
         "^[*~$#!^+<>]+")
 
     OnToggle(*) {

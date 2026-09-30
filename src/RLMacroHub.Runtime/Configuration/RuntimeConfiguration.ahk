@@ -87,10 +87,11 @@ class RuntimeConfiguration {
         try {
             configuration.SchemaVersion := this.ReadInteger(path, "Runtime", "SchemaVersion", 1, 1, this.CurrentSchemaVersion)
             configuration.General.ToggleHotkey := this.ReadRequired(path, "General", "ToggleHotkey", "XButton1")
-            if configuration.General.ToggleHotkey = "w"
-                || configuration.General.ToggleHotkey = "s"
-                || configuration.General.ToggleHotkey = "a"
-                || configuration.General.ToggleHotkey = "d" {
+            normalizedToggleHotkey := this.NormalizeKeyName(configuration.General.ToggleHotkey)
+            if normalizedToggleHotkey = "w"
+                || normalizedToggleHotkey = "s"
+                || normalizedToggleHotkey = "a"
+                || normalizedToggleHotkey = "d" {
                 configuration.General.ToggleHotkey := "XButton1"
                 if IsObject(logger)
                     logger.Warn("Toggle hotkeys W, A, S, and D are reserved for Backwards Run; restored XButton1.")
@@ -151,13 +152,17 @@ class RuntimeConfiguration {
                     continue
                 }
 
-                if seenSources.Has(source) || source = configuration.General.ToggleHotkey || this.IsReservedBindingSource(source) {
+                normalizedSource := this.NormalizeKeyName(source)
+                normalizedToggleHotkey := this.NormalizeKeyName(configuration.General.ToggleHotkey)
+                if seenSources.Has(normalizedSource)
+                    || normalizedSource = normalizedToggleHotkey
+                    || this.IsReservedBindingSource(normalizedSource) {
                     if IsObject(logger)
                         logger.Warn("Skipped duplicate or reserved binding source: " source)
                     continue
                 }
 
-                seenSources[source] := true
+                seenSources[normalizedSource] := true
                 configuration.Keybinds.Bindings.Push({ Source: source, Target: target })
             }
 
@@ -220,12 +225,15 @@ class RuntimeConfiguration {
     }
 
     static IsReservedBindingSource(source) {
+        normalizedSource := this.NormalizeKeyName(source)
         for reserved in this.ReservedBindingSources {
-            if source = reserved
+            if normalizedSource = this.NormalizeKeyName(reserved)
                 return true
         }
         return false
     }
+
+    static NormalizeKeyName(keyName) => StrLower(Trim(keyName))
 
     static IsAbilitySlot(slot) {
         for supportedSlot in this.AbilitySlotKeys {

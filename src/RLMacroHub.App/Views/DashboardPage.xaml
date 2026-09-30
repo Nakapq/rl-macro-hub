@@ -50,6 +50,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <Border Style="{StaticResource CardStyle}">
                     <StackPanel Spacing="9">
@@ -83,6 +84,14 @@
                         <TextBlock Text="{x:Bind ViewModel.GateMacroState, Mode=OneWay}" Foreground="{StaticResource SuccessBrush}" />
                         <TextBlock Text="{x:Bind ViewModel.GateMacroSummary, Mode=OneWay}" Style="{StaticResource MutedTextStyle}" />
                         <Button Content="Configure" HorizontalAlignment="Left" Command="{x:Bind ViewModel.ConfigureCommand}" CommandParameter="gate" />
+                    </StackPanel>
+                </Border>
+                <Border Grid.Row="2" Style="{StaticResource CardStyle}">
+                    <StackPanel Spacing="9">
+                        <TextBlock Text="Backwards Run" FontSize="18" FontWeight="SemiBold" />
+                        <TextBlock Text="{x:Bind ViewModel.BackwardsRunState, Mode=OneWay}" Foreground="{StaticResource SuccessBrush}" />
+                        <TextBlock Text="Legacy, double-tap, or multi-directional mana-run movement." Style="{StaticResource MutedTextStyle}" />
+                        <Button Content="Configure" HorizontalAlignment="Left" Command="{x:Bind ViewModel.ConfigureCommand}" CommandParameter="backwards-run" />
                     </StackPanel>
                 </Border>
             </Grid>

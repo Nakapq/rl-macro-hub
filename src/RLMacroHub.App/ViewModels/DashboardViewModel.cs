@@ -83,6 +83,7 @@ public sealed partial class DashboardViewModel : ObservableObject
 
     public string AutoclickerState => _settings.Current.Autoclicker.Enabled ? "Enabled" : "Disabled";
     public string KeybindState => _settings.Current.Keybinds.Enabled ? "Enabled" : "Disabled";
+    public string BackwardsRunState => _settings.Current.BackwardsRun.Enabled ? "Enabled" : "Disabled";
     public string GateMacroState => _settings.Current.GateMacro.Enabled ? "Enabled" : "Disabled";
     public string ManaOverlayState => _settings.Current.ManaOverlay.Enabled ? "Enabled" : "Disabled";
 
@@ -152,6 +153,7 @@ public sealed partial class DashboardViewModel : ObservableObject
         GateMacroSummary = $"{configuration.GateMacro.Mappings.Count} mappings";
         OnPropertyChanged(nameof(AutoclickerState));
         OnPropertyChanged(nameof(KeybindState));
+        OnPropertyChanged(nameof(BackwardsRunState));
         OnPropertyChanged(nameof(GateMacroState));
         OnPropertyChanged(nameof(ManaOverlayState));
     }

@@ -11,7 +11,7 @@ public sealed partial class KeybindsViewModel : ObservableObject
 {
     private static readonly HashSet<string> ReservedRuntimeSources = new(StringComparer.OrdinalIgnoreCase)
     {
-        "/", "Enter", "Esc", "Escape", "SC029", "LButton",
+        "/", "Enter", "Esc", "Escape", "SC029", "LButton", "w", "a", "s", "d",
         "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "="
     };
 

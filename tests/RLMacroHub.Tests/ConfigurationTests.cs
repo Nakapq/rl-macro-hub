@@ -26,6 +26,8 @@ public sealed class ConfigurationTests
         Assert.True(configuration.ManaOverlay.Enabled);
         Assert.Equal(ManaOverlayConfiguration.DefaultNormalizedY, configuration.ManaOverlay.NormalizedY);
         Assert.Equal(5, configuration.Keybinds.Bindings.Count);
+        Assert.True(configuration.BackwardsRun.Enabled);
+        Assert.Equal(BackwardsRunMode.Legacy, configuration.BackwardsRun.Mode);
         Assert.True(configuration.GateMacro.Enabled);
         Assert.Equal(38, configuration.GateMacro.Mappings.Count);
         Assert.Contains(configuration.GateMacro.Mappings, mapping => mapping.Notation == "d5" && mapping.Location == "desert 5");
@@ -78,6 +80,8 @@ public sealed class ConfigurationTests
         secondSlot.Name = "  Dash  ";
         secondSlot.AutoclickerEnabled = false;
         configuration.Keybinds.Bindings.Add(new KeyBinding("Q", "6"));
+        configuration.BackwardsRun.Enabled = false;
+        configuration.BackwardsRun.Mode = BackwardsRunMode.DoubleTap;
         configuration.GateMacro.Enabled = true;
         configuration.GateMacro.Mappings = [new GateLocationMapping("custom", "forest 3")];
         await writer.SaveAsync(configuration);
@@ -90,6 +94,8 @@ public sealed class ConfigurationTests
         Assert.Equal("Dash", reloadedSlot.Name);
         Assert.False(reloadedSlot.AutoclickerEnabled);
         Assert.Contains(reloaded.Keybinds.Bindings, binding => binding.Source == "Q" && binding.Target == "6");
+        Assert.False(reloaded.BackwardsRun.Enabled);
+        Assert.Equal(BackwardsRunMode.DoubleTap, reloaded.BackwardsRun.Mode);
         Assert.True(reloaded.GateMacro.Enabled);
         GateLocationMapping gateMapping = Assert.Single(reloaded.GateMacro.Mappings);
         Assert.Equal("custom", gateMapping.Notation);
@@ -185,6 +191,7 @@ public sealed class ConfigurationTests
         configuration.General = null!;
         configuration.Autoclicker = null!;
         configuration.Keybinds = null!;
+        configuration.BackwardsRun = null!;
         configuration.GateMacro = null!;
         configuration.ManaOverlay = null!;
         configuration.Overlay = null!;
@@ -195,6 +202,7 @@ public sealed class ConfigurationTests
         Assert.Equal(12, configuration.Autoclicker.AbilitySlots.Count);
         Assert.NotNull(configuration.Autoclicker.InventoryPanel);
         Assert.NotNull(configuration.Keybinds.Bindings);
+        Assert.NotNull(configuration.BackwardsRun);
         Assert.NotNull(configuration.GateMacro.Mappings);
         Assert.Equal(ManaOverlayConfiguration.DefaultScale, configuration.ManaOverlay.Scale);
         Assert.Equal("autoclicker-status", Assert.Single(configuration.Overlay.Elements).Id);
@@ -234,6 +242,32 @@ public sealed class ConfigurationTests
         Assert.False(secondSlot.AutoclickerEnabled);
         Assert.Equal("Q", Assert.Single(configuration.Keybinds.Bindings).Source);
         Assert.Equal("6", Assert.Single(configuration.Keybinds.Bindings).Target);
+    }
+
+    [Theory]
+    [InlineData("W")]
+    [InlineData("S")]
+    [InlineData("A")]
+    [InlineData("D")]
+    public void ValidationRejectsBackwardsRunKeyAsToggleHotkey(string key)
+    {
+        AppConfiguration configuration = AppConfiguration.CreateDefault();
+        configuration.Autoclicker.ToggleHotkey = key;
+
+        configuration.ValidateAndNormalize();
+
+        Assert.Equal("XButton1", configuration.Autoclicker.ToggleHotkey);
+    }
+
+    [Fact]
+    public void ValidationRestoresInvalidBackwardsRunMode()
+    {
+        AppConfiguration configuration = AppConfiguration.CreateDefault();
+        configuration.BackwardsRun.Mode = (BackwardsRunMode)999;
+
+        configuration.ValidateAndNormalize();
+
+        Assert.Equal(BackwardsRunMode.Legacy, configuration.BackwardsRun.Mode);
     }
 
     [Fact]

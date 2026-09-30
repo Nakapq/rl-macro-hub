@@ -14,6 +14,7 @@
                 <StackPanel Spacing="18">
                     <ToggleSwitch Header="Autoclicker enabled" IsOn="{x:Bind ViewModel.Enabled, Mode=TwoWay}" />
                     <TextBox Header="Toggle hotkey" Text="{x:Bind ViewModel.ToggleHotkey, Mode=TwoWay}" PlaceholderText="XButton1" MaxWidth="380" HorizontalAlignment="Stretch" />
+                    <TextBlock Text="W, A, S, and D are reserved for the Backwards Run macro." Style="{StaticResource MutedTextStyle}" />
                     <Grid ColumnSpacing="18">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
                         <NumberBox Header="Maximum CPS" Value="{x:Bind ViewModel.MaximumCps, Mode=TwoWay}" Minimum="1" Maximum="120" SpinButtonPlacementMode="Compact" />

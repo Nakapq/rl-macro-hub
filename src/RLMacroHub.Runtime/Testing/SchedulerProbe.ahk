@@ -28,4 +28,4 @@ while currentCounter < endCounter {
 
 waiter.Dispose()
 DllCall("Winmm\timeEndPeriod", "UInt", 1, "UInt")
-FileAppend "scheduled-cps=" scheduledClicks "`n", "*"
+try FileAppend "scheduled-cps=" scheduledClicks "`n", "*"

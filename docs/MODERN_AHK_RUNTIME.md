@@ -17,6 +17,7 @@ RLMacroHub.Runtime.ahk
 │   ├── ManaOverlay.ahk
 │   ├── InventoryController.ahk
 │   ├── AbilitySelectionController.ahk
+│   ├── BackwardsRunModule.ahk
 │   ├── GateMacroModule.ahk
 │   ├── InputCoordinator.ahk
 │   ├── KeybindModule.ahk
@@ -45,6 +46,7 @@ All modules receive the same state object. The important invariants remain:
 - Remaps remain available in inventory and update inventory state when their target is the inventory key.
 - Closing inventory can force the master state enabled and resumes an already-held LMB only when the selected ability permits it.
 - Modifier chords pass through instead of being needlessly remapped.
+- Backwards Run preserves physical directional input and offers three profile-scoped modes. Legacy retains the held-`W`/`S` arrow sequence. Double Tap retains independent 200 ms `A`/`S`/`D` activation. Multi-Directional accepts a 200 ms double tap on `W`, `A`, `S`, or `D`, establishes the neutral mana-run state with Up Arrow, and keeps one axis active. `W`/`S` transitions swap held Up/Down Arrow output; `A`/`D` transitions temporarily release the previously held physical direction so the two keys do not cancel. Releasing the newer direction falls back to its still-held opposite, and the session ends when neither axis key remains held. Chat, remap activity, focus loss, and the master runtime toggle cancel or suppress all modes. See [Mana running](MANA_RUNNING.md) for the state model.
 - Chat typing suppression is independent of the Gate Macro setting. `/` marks the runtime as typing-paused, so autoclicking stops and bound sources pass through unchanged; Enter or Escape clears the pause without changing the master enabled state.
 - Gate notation capture begins only when `/` opens Roblox chat. Enter compares the current token against the configured map without case sensitivity, replaces an exact match, and only then sends Enter to Roblox. Escape, Enter, a physical click, or loss of Roblox focus ends the capture so it cannot span ordinary gameplay. Unmatched chat text is submitted unchanged.
 - The QPC scheduler emits at most one due click and resets a late deadline, never replaying missed clicks as a burst.
@@ -63,6 +65,7 @@ The app's JSON document remains canonical. `RuntimeIniAdapter` creates `RLMacroH
 - `[Bindings]`: numbered source/target pairs with no legacy ten-row limit
 - `[GateMacro]`: enabled state and mapping count
 - `[GateMappings]`: numbered notation/location pairs used for exact chat expansion
+- `[BackwardsRun]`: enabled state and `Legacy`/`DoubleTap`/`MultiDirectional` activation mode
 - `[Overlay]`: transitional HUD visibility, click-through behavior, size, and Roblox-relative offsets
 - `[ManaOverlay]`: visibility, normalized client position, scale, and opacity for the PNG mana guide
 
@@ -80,7 +83,7 @@ Gate notations accept 1–20 ASCII letters, digits, hyphens, or underscores and 
 
 The loader validates ranges, skips incomplete/duplicate/conflicting bindings and gate mappings, and restores defaults if parsing fails. Runtime configuration is read once at startup; the tray's Reload command restarts the process. Live configuration reload should arrive with structured IPC.
 
-State-observer sources are currently reserved: `/`, Enter/Escape, `SC029`, LMB, and the number-row ability keys. The WinUI editor rejects these as remap sources so a dynamic registration cannot replace a state-critical observer. They remain valid remap targets. A future centralized multi-subscriber hotkey router can relax this restriction safely.
+State-observer sources are currently reserved: `/`, Enter/Escape, `SC029`, LMB, `W`, `A`, `S`, `D`, and the number-row ability keys. The WinUI editor rejects these as remap sources so a dynamic registration cannot replace a state-critical observer. They remain valid remap targets. A future centralized multi-subscriber hotkey router can relax this restriction safely.
 
 ## Adding a module
 

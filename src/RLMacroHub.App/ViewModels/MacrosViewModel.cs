@@ -19,9 +19,16 @@ public sealed class MacrosViewModel : ObservableObject
 
     private void Refresh(Core.Models.AppConfiguration configuration)
     {
+        string backwardsRunMode = configuration.BackwardsRun.Mode switch
+        {
+            Core.Models.BackwardsRunMode.DoubleTap => "Double-tap S/A/D",
+            Core.Models.BackwardsRunMode.MultiDirectional => "Multi-directional W/A/S/D",
+            _ => "Legacy W + S"
+        };
         Items.Clear();
         Items.Add(new("Autoclicker", "High-resolution modular AHK v2 click scheduler", configuration.Autoclicker.Enabled ? "Enabled" : "Disabled", "autoclicker", true));
         Items.Add(new("Keybinds", "Shared-state, modifier-aware Roblox remapping", configuration.Keybinds.Enabled ? "Enabled" : "Disabled", "keybinds", true));
+        Items.Add(new("Backwards Run", $"{backwardsRunMode} activation for the arrow-key movement sequence", configuration.BackwardsRun.Enabled ? "Enabled" : "Disabled", "backwards-run", true));
         Items.Add(new("Mana Overlay", "Transparent PNG guide aligned to the focused Roblox client", configuration.ManaOverlay.Enabled ? "Enabled" : "Disabled", "mana", true));
         Items.Add(new("Gate Macro", "Exact chat notation expansion for gate locations", configuration.GateMacro.Enabled ? "Enabled" : "Disabled", "gate", true));
         Items.Add(new("Cooldown Indicators", "Reusable visual cooldown tracking", "Planned", "cooldowns", false));

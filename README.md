@@ -63,7 +63,6 @@ src/
   RLMacroHub.Runtime/         Modular AutoHotkey v2 runtime and self-tests
 tests/
   RLMacroHub.Tests/           Non-UI xUnit tests
-legacy/                       Untouched, non-runnable AHK v1 reference source
 docs/                         Architecture, audit, and roadmap
 ```
 

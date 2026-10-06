@@ -79,6 +79,11 @@ class RuntimeSelfTest {
         this.Assert(
             !BackwardsRunModule.CanActivate(state, configuration.BackwardsRun, true, false),
             "backwards run should require physical W")
+        state.RemapBusy := true
+        this.Assert(
+            !BackwardsRunModule.CanActivate(state, configuration.BackwardsRun, true, true),
+            "remap output should block new backwards-run activation")
+        state.RemapBusy := false
         this.Assert(BackwardsRunModule.DoubleTapWindowMs = 200, "directional double taps should use the reference 200 ms window")
         this.Assert(BackwardsRunModule.AxisForDirection("w") = "vertical", "W should belong to the vertical run axis")
         this.Assert(BackwardsRunModule.AxisForDirection("d") = "horizontal", "D should belong to the horizontal run axis")
@@ -96,8 +101,11 @@ class RuntimeSelfTest {
             !BackwardsRunModule.ShouldUseWAsArrowRebind(true, "vertical", false, true),
             "native W-backed sessions should keep forwarding physical W")
         this.Assert(
-            !BackwardsRunModule.ShouldUseWAsArrowRebind(true, "horizontal", true, true),
-            "lateral sessions should not consume physical W")
+            BackwardsRunModule.ShouldUseWAsArrowRebind(true, "horizontal", true, false),
+            "lateral sessions should consume physical W as an Up Arrow rebind")
+        this.Assert(
+            !BackwardsRunModule.ShouldUseWAsArrowRebind(false, "horizontal", true, false),
+            "ordinary W input should pass through outside a lateral session")
         this.Assert(
             BackwardsRunModule.CanActivate(state, configuration.BackwardsRun, true, false, false),
             "double-tap mode should create W input without requiring physical W")

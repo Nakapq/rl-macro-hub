@@ -22,10 +22,11 @@ Multi-Directional mode extends that structure to all four directions and keeps o
 Only the opposite direction on the active axis changes the session:
 
 - `W ↔ S` releases the current synthetic arrow and holds the opposite arrow.
-- In an `S`-initiated session, synthetic `W` remains held for as long as physical `S` remains held. During that state, physical `W` is consumed as an Up Arrow rebind, so its key-up cannot release Roblox's synthetic `W` foundation. Outside that state, physical `W` is forwarded normally, including native double-tap activation. If `S` is released while physical `W` remains held, ownership transfers to the player's `W` without sending `W Up`.
+- In an `S`-initiated session, synthetic `W` remains held for as long as physical `S` remains held. During that state, physical `W` is consumed as an Up Arrow rebind, so its key-up cannot release Roblox's synthetic `W` foundation. In vertical sessions outside that state, physical `W` is forwarded normally, including native double-tap activation. If `S` is released while physical `W` remains held, ownership transfers to the player's `W` without sending `W Up`.
 - `A ↔ D` releases the previously active lateral key in Roblox while the physical key remains held, allowing the newly pressed opposite key to take control instead of letting `A + D` cancel each other.
+- During an `A`/`D` session, physical `W` is consumed and held as synthetic Up Arrow input. Releasing `W` releases Up Arrow without disturbing the synthetic `W` that sustains the mana run.
 - Releasing the newer direction falls back to the opposite direction when that key is still physically held.
 - Releasing both keys on the active axis ends the session and releases all synthetic output.
-- Keys from the other axis pass through without replacing the active session.
+- Other keys from the opposite axis pass through without replacing the active session.
 
-If a physical `W` release would cancel a session that still needs the synthetic mana-run hold, the runtime immediately reasserts synthetic `W`. Losing Roblox focus, opening chat, beginning a remap, disabling the runtime, or shutting it down releases every synthetic key and restores any temporarily suppressed physical lateral key.
+If a physical `W` release would cancel a session that still needs the synthetic mana-run hold, the runtime immediately reasserts synthetic `W`. Remap output blocks new activation but does not interrupt an active run. Losing Roblox focus, opening chat, disabling the runtime, or shutting it down releases every synthetic key and restores any temporarily suppressed physical lateral key.

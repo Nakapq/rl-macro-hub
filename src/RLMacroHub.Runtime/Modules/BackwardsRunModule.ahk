@@ -123,7 +123,6 @@ class BackwardsRunModule {
             && this.Configuration.Enabled
             && this.State.Enabled
             && !this.State.TypingPaused
-            && !this.State.RemapBusy
             return
 
         this.ResetTaps()
@@ -138,13 +137,19 @@ class BackwardsRunModule {
 
         if this.Configuration.Mode = "MultiDirectional" {
             if key = "w" {
-                this.WPressForwarded := !BackwardsRunModule.ShouldUseWAsArrowRebind(
+                useWAsArrowRebind := BackwardsRunModule.ShouldUseWAsArrowRebind(
                     this.Activated,
                     this.SessionAxis,
                     this.SyntheticWHeld,
                     GetKeyState("s", "P"))
+                this.WPressForwarded := !useWAsArrowRebind
                 if this.WPressForwarded
                     SendInput "{Blind}{w down}"
+                else if this.SessionAxis = "horizontal" {
+                    ; Keep the lateral session's synthetic W foundation intact.
+                    ; Physical W controls forward movement through Up Arrow.
+                    this.HoldDirectionalArrow("w")
+                }
             }
 
             if this.Activated {
@@ -243,6 +248,14 @@ class BackwardsRunModule {
                 ; so its eventual key-up is forwarded exactly once.
                 this.SyntheticWHeld := false
                 this.WPressForwarded := true
+            }
+
+            if key = "w" && this.SessionAxis = "horizontal" {
+                if this.ArrowHeld = "Up" {
+                    this.ArrowHeld := ""
+                    try SendInput "{Up up}"
+                }
+                return
             }
 
             if key = this.SuppressedDirection
@@ -510,9 +523,10 @@ class BackwardsRunModule {
 
     static ShouldUseWAsArrowRebind(activated, sessionAxis, syntheticWHeld, isSHeld) =>
         activated
-        && sessionAxis = "vertical"
-        && syntheticWHeld
-        && isSHeld
+        && (sessionAxis = "horizontal"
+            || (sessionAxis = "vertical"
+                && syntheticWHeld
+                && isSHeld))
 
     static CanActivate(state, configuration, isRobloxActive, isWPressed, requireW := true) =>
         configuration.Enabled

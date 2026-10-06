@@ -29,13 +29,31 @@ public sealed class ConfigurationTests
         Assert.True(configuration.BackwardsRun.Enabled);
         Assert.Equal(BackwardsRunMode.Legacy, configuration.BackwardsRun.Mode);
         Assert.True(configuration.GateMacro.Enabled);
-        Assert.Equal(38, configuration.GateMacro.Mappings.Count);
+        Assert.Equal(46, configuration.GateMacro.Mappings.Count);
+        Assert.Contains(configuration.GateMacro.Mappings, mapping => mapping.Notation == "d" && mapping.Location == "desert");
+        Assert.Contains(configuration.GateMacro.Mappings, mapping => mapping.Notation == "s" && mapping.Location == "shore");
         Assert.Contains(configuration.GateMacro.Mappings, mapping => mapping.Notation == "d5" && mapping.Location == "desert 5");
         Assert.Contains(configuration.GateMacro.Mappings, mapping => mapping.Notation == "fo4" && mapping.Location == "forge 4");
         Assert.Contains(configuration.GateMacro.Mappings, mapping => mapping.Notation == "sig" && mapping.Location == "sigil");
         OverlayElementConfiguration status = Assert.Single(configuration.Overlay.Elements);
         Assert.Equal(56, status.Width);
         Assert.Equal(-348, status.X);
+    }
+
+    [Theory]
+    [InlineData("d", "desert")]
+    [InlineData("t", "tundra")]
+    [InlineData("f", "forest")]
+    [InlineData("df", "deepforest")]
+    [InlineData("s", "shore")]
+    [InlineData("j", "jungle")]
+    [InlineData("p", "plains")]
+    [InlineData("fo", "forge")]
+    public void DefaultGateMappingsIncludeUnnumberedLocations(string notation, string location)
+    {
+        Assert.Contains(
+            GateMacroConfiguration.CreateDefaultMappings(),
+            mapping => mapping.Notation == notation && mapping.Location == location);
     }
 
     [Fact]

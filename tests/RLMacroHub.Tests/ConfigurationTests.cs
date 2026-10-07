@@ -267,6 +267,11 @@ public sealed class ConfigurationTests
     [InlineData("S")]
     [InlineData("A")]
     [InlineData("D")]
+    [InlineData("G")]
+    [InlineData("Q")]
+    [InlineData("V")]
+    [InlineData("LButton")]
+    [InlineData("RButton")]
     public void ValidationRejectsBackwardsRunKeyAsToggleHotkey(string key)
     {
         AppConfiguration configuration = AppConfiguration.CreateDefault();

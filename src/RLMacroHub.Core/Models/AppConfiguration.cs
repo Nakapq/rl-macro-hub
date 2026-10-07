@@ -33,7 +33,12 @@ public sealed class AppConfiguration
         if (string.Equals(Autoclicker.ToggleHotkey, "w", StringComparison.OrdinalIgnoreCase)
             || string.Equals(Autoclicker.ToggleHotkey, "s", StringComparison.OrdinalIgnoreCase)
             || string.Equals(Autoclicker.ToggleHotkey, "a", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(Autoclicker.ToggleHotkey, "d", StringComparison.OrdinalIgnoreCase))
+            || string.Equals(Autoclicker.ToggleHotkey, "d", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(Autoclicker.ToggleHotkey, "g", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(Autoclicker.ToggleHotkey, "q", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(Autoclicker.ToggleHotkey, "v", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(Autoclicker.ToggleHotkey, "LButton", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(Autoclicker.ToggleHotkey, "RButton", StringComparison.OrdinalIgnoreCase))
         {
             Autoclicker.ToggleHotkey = "XButton1";
         }

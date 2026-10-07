@@ -13,5 +13,6 @@ class RuntimeState {
         this.ClickCountSample := 0
         this.CpsSampleTick := A_TickCount
         this.CurrentCps := 0
+        this.BackwardsRunActive := false
     }
 }

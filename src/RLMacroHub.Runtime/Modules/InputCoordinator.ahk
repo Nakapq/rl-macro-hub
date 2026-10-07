@@ -1,5 +1,5 @@
 class InputCoordinator {
-    __New(state, configuration, context, inventory, abilitySelection, gateMacro, autoclicker, logger) {
+    __New(state, configuration, context, inventory, abilitySelection, gateMacro, autoclicker, backwardsRun, logger) {
         this.State := state
         this.Configuration := configuration
         this.Context := context
@@ -7,8 +7,10 @@ class InputCoordinator {
         this.AbilitySelection := abilitySelection
         this.GateMacro := gateMacro
         this.Autoclicker := autoclicker
+        this.BackwardsRun := backwardsRun
         this.Logger := logger
         this.RegisteredHotkeys := []
+        this.RunCancelHotkeyNames := ["$*~RButton", "$*~q", "$*~v", "$*~g"]
         this.AbilityKeysDown := Map()
         this.ToggleHotkey := ""
         this.ChatStartCallback := ObjBindMethod(this, "OnChatStart")
@@ -17,6 +19,7 @@ class InputCoordinator {
         this.InventoryCallback := ObjBindMethod(this, "OnInventoryKey")
         this.LeftDownCallback := ObjBindMethod(this, "OnPhysicalLeftDown")
         this.LeftUpCallback := ObjBindMethod(this, "OnPhysicalLeftUp")
+        this.RunCancelCallback := ObjBindMethod(this, "OnRunCancelInput")
         this.AbilityCallback := ObjBindMethod(this, "OnAbilityKey")
         this.AbilityUpCallback := ObjBindMethod(this, "OnAbilityKeyUp")
         this.ToggleCallback := ObjBindMethod(this, "OnToggle")
@@ -30,6 +33,10 @@ class InputCoordinator {
         this.RegisterOne("*~SC029", this.InventoryCallback)
         this.RegisterOne("$*~LButton", this.LeftDownCallback)
         this.RegisterOne("$*~LButton Up", this.LeftUpCallback)
+        if this.Configuration.BackwardsRun.Enabled {
+            for hotkeyName in this.RunCancelHotkeyNames
+                this.RegisterOne(hotkeyName, this.RunCancelCallback)
+        }
         for key in RuntimeConfiguration.AbilitySlotKeys {
             this.RegisterOne("*~" key, this.AbilityCallback)
             this.RegisterOne("*~" key " Up", this.AbilityUpCallback)
@@ -89,6 +96,7 @@ class InputCoordinator {
         ; into ordinary gameplay even if Roblox never exposes the focus change.
         this.GateMacro.CancelCapture()
         this.State.TypingPaused := false
+        this.OnRunCancelInput()
         this.State.PhysicalLButtonDown := true
         this.State.LastPhysicalDownTick := A_TickCount
         this.Autoclicker.Start()
@@ -98,6 +106,11 @@ class InputCoordinator {
         this.State.PhysicalLButtonDown := false
         this.State.LastPhysicalDownTick := 0
         this.Autoclicker.HardStop()
+    }
+
+    OnRunCancelInput(*) {
+        if this.Configuration.BackwardsRun.Enabled
+            this.BackwardsRun.OnRunCancel()
     }
 
     OnAbilityKey(thisHotkey) {

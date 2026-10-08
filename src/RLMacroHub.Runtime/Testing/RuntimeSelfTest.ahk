@@ -4,6 +4,8 @@ class RuntimeSelfTest {
         state := RuntimeState(true)
         state.PhysicalLButtonDown := true
         state.LastPhysicalDownTick := 100
+        this.Assert(!state.BackwardsRunActive, "backwards-run HUD state should default off")
+        this.Assert(StatusOverlay.TotalHeight(39) = 58, "the running HUD row should sit directly below the 39-pixel autoclicker HUD")
 
         this.Assert(
             RuntimePolicy.CanAutoClick(state, configuration.Autoclicker, true, true, false, 130),
@@ -48,6 +50,7 @@ class RuntimeSelfTest {
         this.Assert(InputCoordinator.AbilityKeyFromHotkey("*~1") = "1", "ability key-down hotkeys should normalize")
         this.Assert(InputCoordinator.AbilityKeyFromHotkey("*~= Up") = "=", "ability key-up hotkeys should normalize")
         testGateMacro := RuntimeSelfTestGateMacro()
+        testBackwardsRunCancellation := RuntimeSelfTestBackwardsRunCancellation()
         inputHandler := InputCoordinator(
             state,
             configuration,
@@ -56,12 +59,17 @@ class RuntimeSelfTest {
             abilitySelection,
             testGateMacro,
             testAutoclicker,
+            testBackwardsRunCancellation,
             RuntimeSelfTestLogger())
         state.TypingPaused := true
         inputHandler.OnPhysicalLeftDown()
         this.Assert(!state.TypingPaused, "a physical click should clear stale chat suppression")
         this.Assert(testGateMacro.CancelCaptureCount = 1, "a physical click should cancel gate capture")
         this.Assert(testAutoclicker.StartCount = 1, "a physical click should attempt to start autoclicking")
+        this.Assert(testBackwardsRunCancellation.CancelCount = 1, "a physical left click should reset backwards-run state")
+        inputHandler.OnRunCancelInput()
+        this.Assert(testBackwardsRunCancellation.CancelCount = 2, "other registered cancellation inputs should reset backwards-run state")
+        this.Assert(inputHandler.RunCancelHotkeyNames.Length = 4, "right click, Q, V, and G should have pass-through cancellation observers")
 
         this.Assert(InventoryController.IsInventoryKey("SC029"), "SC029 should be an inventory key")
         this.Assert(configuration.Autoclicker.MaximumCps = 120, "default CPS should remain 120")
@@ -79,13 +87,69 @@ class RuntimeSelfTest {
         this.Assert(
             !BackwardsRunModule.CanActivate(state, configuration.BackwardsRun, true, false),
             "backwards run should require physical W")
+        state.RemapBusy := true
+        this.Assert(
+            !BackwardsRunModule.CanActivate(state, configuration.BackwardsRun, true, true),
+            "remap output should block new backwards-run activation")
+        state.RemapBusy := false
         this.Assert(BackwardsRunModule.DoubleTapWindowMs = 200, "directional double taps should use the reference 200 ms window")
+        this.Assert(BackwardsRunModule.WalkingResumeDelayMs = 30, "G should reassert held walking input after Roblox processes the reset")
         this.Assert(BackwardsRunModule.AxisForDirection("w") = "vertical", "W should belong to the vertical run axis")
         this.Assert(BackwardsRunModule.AxisForDirection("d") = "horizontal", "D should belong to the horizontal run axis")
         this.Assert(BackwardsRunModule.OppositeDirection("w") = "s", "W should transition to S")
         this.Assert(BackwardsRunModule.OppositeDirection("s") = "w", "S should transition to W")
         this.Assert(BackwardsRunModule.OppositeDirection("a") = "d", "A should transition to D")
         this.Assert(BackwardsRunModule.OppositeDirection("d") = "a", "D should transition to A")
+        this.Assert(
+            BackwardsRunModule.AnyDirectionHeld(true, false, false, false),
+            "a multi-directional run should continue while its original direction remains held")
+        this.Assert(
+            BackwardsRunModule.AnyDirectionHeld(false, true, false, false),
+            "a multi-directional run should continue when another WASD direction remains held")
+        this.Assert(
+            !BackwardsRunModule.AnyDirectionHeld(false, false, false, false),
+            "a multi-directional run should end after every WASD direction is released")
+        this.Assert(
+            BackwardsRunModule.ShouldTransferForwardedW(true, true, true),
+            "a W-initiated run should transfer its logical W hold while another direction remains held")
+        this.Assert(
+            !BackwardsRunModule.ShouldTransferForwardedW(true, true, false),
+            "the final W release should be forwarded when no other direction remains held")
+        this.Assert(
+            BackwardsRunModule.ShouldReturnWToPhysicalInput(true, true),
+            "a G reset should return the logical W hold to a still-held physical W key")
+        this.Assert(
+            !BackwardsRunModule.ShouldReturnWToPhysicalInput(true, false),
+            "a G reset should release synthetic W when physical W is not held")
+        this.Assert(
+            BackwardsRunModule.WalkingArrowDirection("Up", true, false) = "w",
+            "a G reset should preserve Up Arrow while physical W remains held")
+        this.Assert(
+            BackwardsRunModule.WalkingArrowDirection("Down", false, true) = "s",
+            "a G reset should preserve Down Arrow while physical S remains held")
+        this.Assert(
+            BackwardsRunModule.WalkingArrowDirection("Down", true, true) = "s",
+            "a G reset should preserve the current vertical direction when both keys are held")
+        this.Assert(
+            BackwardsRunModule.WalkingArrowDirection("", false, false) = "",
+            "a G reset should not preserve an arrow after both vertical keys are released")
+        testBackwardsRun := BackwardsRunModule(
+            state,
+            configuration.BackwardsRun,
+            RuntimeSelfTestContext(),
+            RuntimeSelfTestLogger())
+        testBackwardsRun.SetActivated(true)
+        this.Assert(state.BackwardsRunActive, "activating a run should update shared HUD state")
+        testBackwardsRun.ActiveDirection := "a"
+        testBackwardsRun.SessionAxis := "horizontal"
+        testBackwardsRun.LegacyStarted := true
+        testBackwardsRun.TapCounts["w"] := 1
+        testBackwardsRun.ResetToWalkingState()
+        this.Assert(!testBackwardsRun.Activated, "G should reset the active backwards-run session")
+        this.Assert(!state.BackwardsRunActive, "a G reset should turn off shared running HUD state")
+        this.Assert(testBackwardsRun.ActiveDirection = "", "G should reset the active run direction")
+        this.Assert(!testBackwardsRun.LegacyStarted, "G should clear legacy run state")
+        this.Assert(testBackwardsRun.TapCounts["w"] = 0, "G should clear pending directional taps")
         this.Assert(
             BackwardsRunModule.ShouldUseWAsArrowRebind(true, "vertical", true, true),
             "W should be arrow-only while S owns the synthetic W foundation")
@@ -96,8 +160,11 @@ class RuntimeSelfTest {
             !BackwardsRunModule.ShouldUseWAsArrowRebind(true, "vertical", false, true),
             "native W-backed sessions should keep forwarding physical W")
         this.Assert(
-            !BackwardsRunModule.ShouldUseWAsArrowRebind(true, "horizontal", true, true),
-            "lateral sessions should not consume physical W")
+            BackwardsRunModule.ShouldUseWAsArrowRebind(true, "horizontal", true, false),
+            "lateral sessions should consume physical W as an Up Arrow rebind")
+        this.Assert(
+            !BackwardsRunModule.ShouldUseWAsArrowRebind(false, "horizontal", true, false),
+            "ordinary W input should pass through outside a lateral session")
         this.Assert(
             BackwardsRunModule.CanActivate(state, configuration.BackwardsRun, true, false, false),
             "double-tap mode should create W input without requiring physical W")
@@ -151,6 +218,11 @@ class RuntimeSelfTest {
         this.Assert(RuntimeConfiguration.IsReservedBindingSource("S"), "uppercase S should be reserved")
         this.Assert(RuntimeConfiguration.IsReservedBindingSource("A"), "uppercase A should be reserved")
         this.Assert(RuntimeConfiguration.IsReservedBindingSource("D"), "uppercase D should be reserved")
+        this.Assert(RuntimeConfiguration.IsReservedBindingSource("g"), "the backwards-run cancel key should be reserved")
+        this.Assert(RuntimeConfiguration.IsReservedBindingSource("G"), "uppercase G should be reserved")
+        this.Assert(RuntimeConfiguration.IsReservedBindingSource("q"), "Q should be reserved for backwards-run cancellation")
+        this.Assert(RuntimeConfiguration.IsReservedBindingSource("v"), "V should be reserved for backwards-run cancellation")
+        this.Assert(RuntimeConfiguration.IsReservedBindingSource("RButton"), "right click should be reserved for backwards-run cancellation")
         this.Assert(!RuntimeConfiguration.IsReservedBindingSource("Tab"), "ordinary remap sources should remain available")
         this.Assert(InventoryPanelGuard.ContainsNormalizedPoint(configuration.InventoryPanel, 0.5, 0.5), "inventory center should be excluded")
         this.Assert(!InventoryPanelGuard.ContainsNormalizedPoint(configuration.InventoryPanel, 0.1, 0.5), "screen edge should remain clickable")
@@ -216,6 +288,16 @@ class RuntimeSelfTestGateMacro {
 
     CancelCapture() {
         this.CancelCaptureCount += 1
+    }
+}
+
+class RuntimeSelfTestBackwardsRunCancellation {
+    __New() {
+        this.CancelCount := 0
+    }
+
+    OnRunCancel(*) {
+        this.CancelCount += 1
     }
 }
 

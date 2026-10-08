@@ -70,7 +70,7 @@ class MacroRuntime {
         this.BackwardsRun := BackwardsRunModule(this.State, this.Configuration.BackwardsRun, this.Context, this.Logger)
         this.GateMacro := GateMacroModule(this.State, this.Configuration.GateMacro, this.Context, this.Logger)
         this.Inventory.AttachAutoclicker(this.Autoclicker)
-        this.Input := InputCoordinator(this.State, this.Configuration, this.Context, this.Inventory, this.AbilitySelection, this.GateMacro, this.Autoclicker, this.Logger)
+        this.Input := InputCoordinator(this.State, this.Configuration, this.Context, this.Inventory, this.AbilitySelection, this.GateMacro, this.Autoclicker, this.BackwardsRun, this.Logger)
         this.Keybinds := KeybindModule(this.State, this.Configuration.Keybinds, this.Context, this.Inventory, this.AbilitySelection, this.Logger)
         this.ManaOverlay := ManaOverlay(this.Configuration.ManaOverlay, this.Context, this.Logger, baseDirectory "\Assets\ManaOverlay.png")
         this.Overlay := StatusOverlay(this.State, this.Configuration.Overlay, this.Context, this.Logger)

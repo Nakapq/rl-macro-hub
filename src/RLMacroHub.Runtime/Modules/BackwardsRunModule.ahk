@@ -1,5 +1,6 @@
 class BackwardsRunModule {
     static DoubleTapWindowMs := 200
+    static WalkingResumeDelayMs := 30
 
     __New(state, configuration, context, logger) {
         this.State := state
@@ -27,9 +28,11 @@ class BackwardsRunModule {
 
         this.ForwardUpHotkeyName := "$*~w Up"
         this.ForwardUpCallback := ObjBindMethod(this, "OnWUp")
+        this.WalkingResumeCallback := ObjBindMethod(this, "ResumeWalkingMovement")
         this.RegisteredKeys := []
         this.ForwardUpRegistered := false
         this.Activated := false
+        this.State.BackwardsRunActive := false
         this.ActiveDirection := ""
         this.SessionAxis := ""
         this.ArrowHeld := ""
@@ -88,6 +91,7 @@ class BackwardsRunModule {
             try SetTimer this.TapResetCallbacks[key], 0
             this.KeyPressed[key] := false
         }
+        try SetTimer this.WalkingResumeCallback, 0
         this.ResetTaps()
         this.LegacyStarted := false
         this.ReleaseOutputs()
@@ -123,7 +127,6 @@ class BackwardsRunModule {
             && this.Configuration.Enabled
             && this.State.Enabled
             && !this.State.TypingPaused
-            && !this.State.RemapBusy
             return
 
         this.ResetTaps()
@@ -138,13 +141,19 @@ class BackwardsRunModule {
 
         if this.Configuration.Mode = "MultiDirectional" {
             if key = "w" {
-                this.WPressForwarded := !BackwardsRunModule.ShouldUseWAsArrowRebind(
+                useWAsArrowRebind := BackwardsRunModule.ShouldUseWAsArrowRebind(
                     this.Activated,
                     this.SessionAxis,
                     this.SyntheticWHeld,
                     GetKeyState("s", "P"))
+                this.WPressForwarded := !useWAsArrowRebind
                 if this.WPressForwarded
                     SendInput "{Blind}{w down}"
+                else if this.SessionAxis = "horizontal" {
+                    ; Keep the lateral session's synthetic W foundation intact.
+                    ; Physical W controls forward movement through Up Arrow.
+                    this.HoldDirectionalArrow("w")
+                }
             }
 
             if this.Activated {
@@ -215,25 +224,36 @@ class BackwardsRunModule {
 
     OnDirectionUp(key, *) {
         this.KeyPressed[key] := false
+        directionsRemainHeld := false
+        if this.Configuration.Mode = "MultiDirectional" && this.Activated
+            directionsRemainHeld := this.HasHeldDirection()
+
         wPressWasForwarded := false
         if key = "w" && this.Configuration.Mode = "MultiDirectional" {
             wPressWasForwarded := this.WPressForwarded
             this.WPressForwarded := false
-            if wPressWasForwarded
+            if BackwardsRunModule.ShouldTransferForwardedW(
+                this.Activated,
+                wPressWasForwarded,
+                directionsRemainHeld) {
+                ; Keep the existing logical W-down uninterrupted. Ownership
+                ; changes from the released physical key to the session, which
+                ; will emit the matching W-up when the final WASD key is released.
+                this.SyntheticWHeld := true
+            } else if wPressWasForwarded {
                 try SendInput "{Blind}{w up}"
+            }
         }
 
-        if !this.Activated
+        if !this.Activated {
+            if key = "w" && this.ArrowHeld = "Up"
+                this.ReleaseDirectionalArrow()
+            else if key = "s" && this.ArrowHeld = "Down"
+                this.ReleaseDirectionalArrow()
             return
+        }
 
         if this.Configuration.Mode = "MultiDirectional" {
-            if key = "w" && wPressWasForwarded
-                && (this.SyntheticWHeld
-                    || (this.SessionAxis = "vertical"
-                        && this.ActiveDirection = "s"
-                        && GetKeyState("s", "P")))
-                this.ReassertSyntheticW()
-
             if key = "s"
                 && this.SessionAxis = "vertical"
                 && this.SyntheticWHeld
@@ -243,6 +263,17 @@ class BackwardsRunModule {
                 ; so its eventual key-up is forwarded exactly once.
                 this.SyntheticWHeld := false
                 this.WPressForwarded := true
+            }
+
+            if !directionsRemainHeld {
+                this.ReleaseOutputs()
+                return
+            }
+
+            if key = "w" && this.SessionAxis = "horizontal" {
+                if this.ArrowHeld = "Up"
+                    this.ReleaseDirectionalArrow()
+                return
             }
 
             if key = this.SuppressedDirection
@@ -257,8 +288,11 @@ class BackwardsRunModule {
             oppositeDirection := BackwardsRunModule.OppositeDirection(key)
             if GetKeyState(oppositeDirection, "P")
                 this.SwitchMultiDirectionalDirection(oppositeDirection)
-            else
-                this.ReleaseOutputs()
+            else {
+                this.ActiveDirection := ""
+                if this.SessionAxis = "vertical"
+                    this.ReleaseDirectionalArrow()
+            }
             return
         }
 
@@ -279,8 +313,49 @@ class BackwardsRunModule {
         }
     }
 
+    OnRunCancel(*) {
+        this.ResetToWalkingState()
+        SetTimer this.WalkingResumeCallback, -BackwardsRunModule.WalkingResumeDelayMs
+    }
+
+    ResetToWalkingState() {
+        walkingArrowDirection := ""
+        if this.Configuration.Mode = "MultiDirectional"
+            && (this.Activated || this.ArrowHeld != "") {
+            walkingArrowDirection := BackwardsRunModule.WalkingArrowDirection(
+                this.ArrowHeld,
+                GetKeyState("w", "P"),
+                GetKeyState("s", "P"))
+        }
+
+        this.ResetTaps()
+        this.LegacyStarted := false
+        this.ReleaseOutputs(true, walkingArrowDirection != "")
+        if walkingArrowDirection != ""
+            this.HoldDirectionalArrow(walkingArrowDirection)
+    }
+
+    ResumeWalkingMovement(*) {
+        if this.Activated
+            return
+        if !this.Configuration.Enabled
+            || !this.State.Enabled
+            || !this.Context.IsActive()
+            || this.State.TypingPaused
+            return
+
+        for key in this.DirectionKeys {
+            if !GetKeyState(key, "P")
+                continue
+
+            try SendInput "{Blind}{" key " down}"
+            if key = "w" && this.Configuration.Mode = "MultiDirectional"
+                this.WPressForwarded := true
+        }
+    }
+
     ActivateLegacy() {
-        this.Activated := true
+        this.SetActivated(true)
         this.ActiveDirection := "s"
         try {
             if this.UpHeld {
@@ -302,7 +377,7 @@ class BackwardsRunModule {
 
     ActivateDoubleTap(direction) {
         this.ReleaseOutputs()
-        this.Activated := true
+        this.SetActivated(true)
         this.ActiveDirection := direction
         try {
             SendInput "{w}"
@@ -327,7 +402,7 @@ class BackwardsRunModule {
         try {
             this.ReleaseOutputs()
             this.ResetTaps()
-            this.Activated := true
+            this.SetActivated(true)
             this.ActiveDirection := direction
             this.SessionAxis := BackwardsRunModule.AxisForDirection(direction)
 
@@ -374,14 +449,23 @@ class BackwardsRunModule {
         if this.SessionAxis = ""
             return this.ReleaseOutputs()
 
+        if !this.HasHeldDirection()
+            return this.ReleaseOutputs()
+
+        if this.ActiveDirection = ""
+            return
+
         if GetKeyState(this.ActiveDirection, "P")
             return
 
         oppositeDirection := BackwardsRunModule.OppositeDirection(this.ActiveDirection)
         if GetKeyState(oppositeDirection, "P")
             this.SwitchMultiDirectionalDirection(oppositeDirection)
-        else
-            this.ReleaseOutputs()
+        else {
+            this.ActiveDirection := ""
+            if this.SessionAxis = "vertical"
+                this.ReleaseDirectionalArrow()
+        }
     }
 
     SwitchMultiDirectionalDirection(direction) {
@@ -401,7 +485,7 @@ class BackwardsRunModule {
                     this.SuppressedDirection := ""
                 }
 
-                if GetKeyState(previousDirection, "P") {
+                if previousDirection != "" && GetKeyState(previousDirection, "P") {
                     SendInput "{" previousDirection " up}"
                     this.SuppressedDirection := previousDirection
                 }
@@ -427,15 +511,20 @@ class BackwardsRunModule {
         SendInput "{" arrow " down}"
     }
 
-    ReassertSyntheticW() {
-        try {
-            this.SyntheticWHeld := true
-            SendInput "{w down}"
-        } catch as error {
-            this.Logger.Error("Could not preserve synthetic W during a direction transition: " error.Message)
-            this.ReleaseOutputs()
-        }
+    ReleaseDirectionalArrow() {
+        if this.ArrowHeld = ""
+            return
+
+        arrow := this.ArrowHeld
+        this.ArrowHeld := ""
+        try SendInput "{" arrow " up}"
     }
+
+    HasHeldDirection() => BackwardsRunModule.AnyDirectionHeld(
+        GetKeyState("w", "P"),
+        GetKeyState("a", "P"),
+        GetKeyState("s", "P"),
+        GetKeyState("d", "P"))
 
     CompleteLegacyActivation() {
         this.ReleaseOutputs()
@@ -454,15 +543,12 @@ class BackwardsRunModule {
         }
     }
 
-    ReleaseOutputs() {
-        this.Activated := false
+    ReleaseOutputs(preservePhysicalMovement := false, preserveDirectionalArrow := false) {
+        this.SetActivated(false)
         this.ActiveDirection := ""
         this.SessionAxis := ""
-        if this.ArrowHeld != "" {
-            arrow := this.ArrowHeld
-            this.ArrowHeld := ""
-            try SendInput "{" arrow " up}"
-        }
+        if !preserveDirectionalArrow
+            this.ReleaseDirectionalArrow()
 
         if this.SuppressedDirection != "" {
             suppressedDirection := this.SuppressedDirection
@@ -483,11 +569,24 @@ class BackwardsRunModule {
 
         if this.SyntheticWHeld {
             this.SyntheticWHeld := false
-            try SendInput "{w up}"
+            if BackwardsRunModule.ShouldReturnWToPhysicalInput(
+                preservePhysicalMovement,
+                GetKeyState("w", "P")) {
+                ; G has already returned Roblox to walking. Keep the existing
+                ; logical W-down and let the physical W-up release it normally.
+                this.WPressForwarded := true
+            } else {
+                try SendInput "{w up}"
+            }
         }
     }
 
     ResetTap(key, *) => this.TapCounts[key] := 0
+
+    SetActivated(activated) {
+        this.Activated := activated
+        this.State.BackwardsRunActive := activated
+    }
 
     ResetTaps() {
         for key in this.DirectionKeys
@@ -508,11 +607,33 @@ class BackwardsRunModule {
         }
     }
 
+    static AnyDirectionHeld(wHeld, aHeld, sHeld, dHeld) =>
+        wHeld || aHeld || sHeld || dHeld
+
+    static ShouldTransferForwardedW(activated, wPressWasForwarded, directionRemainsHeld) =>
+        activated && wPressWasForwarded && directionRemainsHeld
+
+    static ShouldReturnWToPhysicalInput(preservePhysicalMovement, physicalWHeld) =>
+        preservePhysicalMovement && physicalWHeld
+
+    static WalkingArrowDirection(arrowHeld, wHeld, sHeld) {
+        if arrowHeld = "Up" && wHeld
+            return "w"
+        if arrowHeld = "Down" && sHeld
+            return "s"
+        if wHeld
+            return "w"
+        if sHeld
+            return "s"
+        return ""
+    }
+
     static ShouldUseWAsArrowRebind(activated, sessionAxis, syntheticWHeld, isSHeld) =>
         activated
-        && sessionAxis = "vertical"
-        && syntheticWHeld
-        && isSHeld
+        && (sessionAxis = "horizontal"
+            || (sessionAxis = "vertical"
+                && syntheticWHeld
+                && isSHeld))
 
     static CanActivate(state, configuration, isRobloxActive, isWPressed, requireW := true) =>
         configuration.Enabled

@@ -20,7 +20,7 @@ Last updated: 2026-09-27
 - AutoHotkey v2-only discovery, isolated staging/configuration, duplicate prevention, graceful shutdown, fallback termination
 - Shared-state AHK v2 modules for input, inventory, ability selection, chat-safe slot handling, client-relative inventory-panel hit-testing and optional click-through border, remaps, QPC clicking, Roblox context, timer resolution, logging, autoclicker HUD, and PNG mana guide
 - Re-selecting the currently equipped paused ability is treated as unequip and restores autoclick permission; different paused-to-paused selections remain no-op transitions
-- Compact 56 × 39 AHK status HUD aligned beneath the Roblox Menu button reference, with automatic migration from the prior default placement
+- Compact stacked AHK status HUD aligned beneath the Roblox Menu button reference, with a 56 × 39 autoclicker panel and attached 19-pixel running-state row
 - Profile-aware full-canvas mana overlay with exact Roblox-client alignment, optional position/scale/opacity controls, click-through/no-activate behavior, and automatic focus/minimize hiding
 - Native topmost/no-activate overlay foundation retained without exposing an inaccurate simulated autoclicker preview
 

@@ -5,7 +5,8 @@ class RuntimeConfiguration {
     static MaximumGateLocationLength := 120
     static AbilitySlotKeys := ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "="]
     static ReservedBindingSources := [
-        "/", "Enter", "Esc", "Escape", "SC029", "LButton", "w", "a", "s", "d",
+        "/", "Enter", "Esc", "Escape", "SC029", "LButton", "RButton",
+        "w", "a", "s", "d", "g", "q", "v",
         "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "="
     ]
 
@@ -91,10 +92,15 @@ class RuntimeConfiguration {
             if normalizedToggleHotkey = "w"
                 || normalizedToggleHotkey = "s"
                 || normalizedToggleHotkey = "a"
-                || normalizedToggleHotkey = "d" {
+                || normalizedToggleHotkey = "d"
+                || normalizedToggleHotkey = "g"
+                || normalizedToggleHotkey = "q"
+                || normalizedToggleHotkey = "v"
+                || normalizedToggleHotkey = "lbutton"
+                || normalizedToggleHotkey = "rbutton" {
                 configuration.General.ToggleHotkey := "XButton1"
                 if IsObject(logger)
-                    logger.Warn("Toggle hotkeys W, A, S, and D are reserved for Backwards Run; restored XButton1.")
+                    logger.Warn("The configured toggle hotkey is reserved for Backwards Run input tracking; restored XButton1.")
             }
 
             configuration.Autoclicker.Enabled := this.ReadBoolean(path, "Autoclicker", "Enabled", true)

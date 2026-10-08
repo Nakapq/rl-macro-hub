@@ -44,6 +44,6 @@ The v2 runtime is one process with multiple source modules and one `RuntimeState
 
 `RobloxWindowService` uses a one-second `PeriodicTimer`. It emits only when observable state changes, so the dashboard and dormant native overlay do no work on unchanged ticks. The interval handles launch, exit, movement, resize, minimize/restore, and foreground changes without busy polling.
 
-The native overlay foundation remains a separate dormant WinUI window with tool/no-activate and click-through support. The Overlay page intentionally shows no simulated telemetry preview until structured runtime telemetry can drive it. For now, the live autoclicker HUD and PNG mana guide are rendered and positioned by the AHK runtime.
+The native overlay foundation remains a separate dormant WinUI window with tool/no-activate and click-through support. The Overlay page intentionally shows no simulated telemetry preview until structured runtime telemetry can drive it. For now, the live autoclicker/running-state HUD and PNG mana guide are rendered and positioned by the AHK runtime.
 
 View models use CommunityToolkit.Mvvm field-based `[ObservableProperty]` generation. The .NET 9.0.200 compiler installed for this initialization does not provide the toolkit's generated implementation for its newer partial-property form, so diagnostic `MVVMTK0045` is scoped out until the planned .NET 10 retarget; the application is not NativeAOT-enabled.

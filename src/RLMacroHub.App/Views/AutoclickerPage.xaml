@@ -14,7 +14,7 @@
                 <StackPanel Spacing="18">
                     <ToggleSwitch Header="Autoclicker enabled" IsOn="{x:Bind ViewModel.Enabled, Mode=TwoWay}" />
                     <TextBox Header="Toggle hotkey" Text="{x:Bind ViewModel.ToggleHotkey, Mode=TwoWay}" PlaceholderText="XButton1" MaxWidth="380" HorizontalAlignment="Stretch" />
-                    <TextBlock Text="W, A, S, and D are reserved for the Backwards Run macro." Style="{StaticResource MutedTextStyle}" />
+                    <TextBlock Text="W, A, S, D, G, Q, V, and both mouse buttons are reserved for Backwards Run input tracking." Style="{StaticResource MutedTextStyle}" TextWrapping="Wrap" />
                     <Grid ColumnSpacing="18">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
                         <NumberBox Header="Maximum CPS" Value="{x:Bind ViewModel.MaximumCps, Mode=TwoWay}" Minimum="1" Maximum="120" SpinButtonPlacementMode="Compact" />
@@ -74,7 +74,7 @@
                         </Grid>
                     </StackPanel>
                     <ToggleSwitch Header="Force enabled when inventory closes" IsOn="{x:Bind ViewModel.ForceEnabledWhenInventoryCloses, Mode=TwoWay}" />
-                    <ToggleSwitch Header="Show the AHK autoclicker status HUD" IsOn="{x:Bind ViewModel.ShowOverlayStatus, Mode=TwoWay}" />
+                    <ToggleSwitch Header="Show the AHK autoclicker and running status HUD" IsOn="{x:Bind ViewModel.ShowOverlayStatus, Mode=TwoWay}" />
                 </StackPanel>
             </Border>
             <StackPanel Orientation="Horizontal" Spacing="12">

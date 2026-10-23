@@ -16,6 +16,7 @@ public sealed partial class BackwardsRunViewModel : ObservableObject
 
     [ObservableProperty] private bool _enabled;
     [ObservableProperty] private int _selectedModeIndex;
+    [ObservableProperty] private string _selectedResetHotkey = "Unbound";
     [ObservableProperty] private string _saveStatus = string.Empty;
 
     public BackwardsRunViewModel(
@@ -36,12 +37,20 @@ public sealed partial class BackwardsRunViewModel : ObservableObject
     [RelayCommand]
     private async Task SaveAsync()
     {
+        string resetHotkey = SelectedResetHotkey == "Unbound" ? string.Empty : SelectedResetHotkey;
+        string? error = BackwardsRunConfiguration.GetResetHotkeyError(resetHotkey,
+            _settings.Current.Autoclicker.ToggleHotkey, _settings.Current.Keybinds.Bindings);
+        if (error is not null)
+        {
+            SaveStatus = error;
+            return;
+        }
+        _settings.Current.BackwardsRun.ResetHotkey = resetHotkey;
         _settings.Current.BackwardsRun.Enabled = Enabled;
         _settings.Current.BackwardsRun.Mode = SelectedModeIndex switch
         {
-            1 => BackwardsRunMode.DoubleTap,
-            2 => BackwardsRunMode.MultiDirectional,
-            _ => BackwardsRunMode.Legacy
+            1 => BackwardsRunMode.Legacy,
+            _ => BackwardsRunMode.MultiDirectional
         };
         await _settings.SaveAsync(_settings.Current);
         await _profiles.SaveActiveSettingsAsync();
@@ -53,13 +62,17 @@ public sealed partial class BackwardsRunViewModel : ObservableObject
     private void LoadFrom(BackwardsRunConfiguration configuration)
     {
         Enabled = configuration.Enabled;
+        SelectedResetHotkey = ResetHotkeyOptions.FirstOrDefault(key =>
+            string.Equals(key, configuration.ResetHotkey, StringComparison.OrdinalIgnoreCase)) ?? "Unbound";
         SelectedModeIndex = configuration.Mode switch
         {
-            BackwardsRunMode.DoubleTap => 1,
-            BackwardsRunMode.MultiDirectional => 2,
+            BackwardsRunMode.Legacy => 1,
             _ => 0
         };
     }
+
+    public IReadOnlyList<string> ResetHotkeyOptions { get; } =
+        new[] { "Unbound" }.Concat(BackwardsRunConfiguration.ResetHotkeys).ToArray();
 
     private void OnSettingsChanged(object? sender, AppConfiguration configuration)
     {

@@ -27,7 +27,8 @@ public sealed class ConfigurationTests
         Assert.Equal(ManaOverlayConfiguration.DefaultNormalizedY, configuration.ManaOverlay.NormalizedY);
         Assert.Equal(5, configuration.Keybinds.Bindings.Count);
         Assert.True(configuration.BackwardsRun.Enabled);
-        Assert.Equal(BackwardsRunMode.Legacy, configuration.BackwardsRun.Mode);
+        Assert.Empty(configuration.BackwardsRun.ResetHotkey);
+        Assert.Equal(BackwardsRunMode.MultiDirectional, configuration.BackwardsRun.Mode);
         Assert.True(configuration.GateMacro.Enabled);
         Assert.Equal(46, configuration.GateMacro.Mappings.Count);
         Assert.Contains(configuration.GateMacro.Mappings, mapping => mapping.Notation == "d" && mapping.Location == "desert");
@@ -99,7 +100,8 @@ public sealed class ConfigurationTests
         secondSlot.AutoclickerEnabled = false;
         configuration.Keybinds.Bindings.Add(new KeyBinding("Q", "6"));
         configuration.BackwardsRun.Enabled = false;
-        configuration.BackwardsRun.Mode = BackwardsRunMode.DoubleTap;
+        configuration.BackwardsRun.Mode = BackwardsRunMode.Legacy;
+        configuration.BackwardsRun.ResetHotkey = "F8";
         configuration.GateMacro.Enabled = true;
         configuration.GateMacro.Mappings = [new GateLocationMapping("custom", "forest 3")];
         await writer.SaveAsync(configuration);
@@ -113,7 +115,8 @@ public sealed class ConfigurationTests
         Assert.False(reloadedSlot.AutoclickerEnabled);
         Assert.Contains(reloaded.Keybinds.Bindings, binding => binding.Source == "Q" && binding.Target == "6");
         Assert.False(reloaded.BackwardsRun.Enabled);
-        Assert.Equal(BackwardsRunMode.DoubleTap, reloaded.BackwardsRun.Mode);
+        Assert.Equal(BackwardsRunMode.Legacy, reloaded.BackwardsRun.Mode);
+        Assert.Equal("F8", reloaded.BackwardsRun.ResetHotkey);
         Assert.True(reloaded.GateMacro.Enabled);
         GateLocationMapping gateMapping = Assert.Single(reloaded.GateMacro.Mappings);
         Assert.Equal("custom", gateMapping.Notation);
@@ -290,7 +293,52 @@ public sealed class ConfigurationTests
 
         configuration.ValidateAndNormalize();
 
-        Assert.Equal(BackwardsRunMode.Legacy, configuration.BackwardsRun.Mode);
+        Assert.Equal(BackwardsRunMode.MultiDirectional, configuration.BackwardsRun.Mode);
+    }
+
+    [Theory]
+    [InlineData("W")]
+    [InlineData("Q")]
+    [InlineData("LButton")]
+    [InlineData("XButton1")]
+    [InlineData("F25")]
+    [InlineData("^F8")]
+    public void ConflictingOrUnsupportedRunResetKeyBecomesUnbound(string key)
+    {
+        AppConfiguration configuration = AppConfiguration.CreateDefault();
+        configuration.BackwardsRun.ResetHotkey = key;
+        configuration.ValidateAndNormalize();
+        Assert.Empty(configuration.BackwardsRun.ResetHotkey);
+    }
+
+    [Fact]
+    public void RunResetKeyRejectsRemapConflictsAndAcceptsUnusedKeys()
+    {
+        AppConfiguration configuration = AppConfiguration.CreateDefault();
+        configuration.BackwardsRun.ResetHotkey = " F8 ";
+        configuration.ValidateAndNormalize();
+        Assert.Equal("F8", configuration.BackwardsRun.ResetHotkey);
+        configuration.Keybinds.Bindings.Add(new KeyBinding(" f8 ", "2"));
+        configuration.ValidateAndNormalize();
+        Assert.Empty(configuration.BackwardsRun.ResetHotkey);
+    }
+
+    [Fact]
+    public async Task RemovedDoubleTapModeMigratesToMultiDirectional()
+    {
+        using TemporaryDirectory temporary = new();
+        AppPaths paths = new(temporary.Path);
+        paths.EnsureCreated();
+        await File.WriteAllTextAsync(
+            paths.ConfigurationFile,
+            """{"schemaVersion":8,"backwardsRun":{"enabled":true,"mode":"DoubleTap"}}""");
+        using JsonSettingsService service = new(paths, NullLogger<JsonSettingsService>.Instance);
+
+        AppConfiguration configuration = await service.LoadAsync();
+
+        Assert.Equal(BackwardsRunMode.MultiDirectional, configuration.BackwardsRun.Mode);
+        Assert.Equal(AppConfiguration.CurrentSchemaVersion, configuration.SchemaVersion);
+        Assert.Empty(Directory.GetFiles(temporary.Path, "config.corrupt.*.json"));
     }
 
     [Fact]

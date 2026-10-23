@@ -21,12 +21,13 @@ public sealed class RuntimeIniAdapterTests
         configuration.GateMacro.Mappings = [new GateLocationMapping("d5", "desert 5")];
         configuration.BackwardsRun.Enabled = false;
         configuration.BackwardsRun.Mode = BackwardsRunMode.MultiDirectional;
+        configuration.BackwardsRun.ResetHotkey = "F9";
 
         RuntimeIniAdapter adapter = new(NullLogger<RuntimeIniAdapter>.Instance);
         string ini = adapter.Export(configuration);
 
         Assert.Contains("[Runtime]", ini, StringComparison.Ordinal);
-        Assert.Contains("SchemaVersion=8", ini, StringComparison.Ordinal);
+        Assert.Contains("SchemaVersion=9", ini, StringComparison.Ordinal);
         Assert.Contains("MaximumCps=120", ini, StringComparison.Ordinal);
         Assert.Contains("HoldThresholdMs=30", ini, StringComparison.Ordinal);
         Assert.DoesNotContain("YieldMs", ini, StringComparison.Ordinal);
@@ -47,6 +48,7 @@ public sealed class RuntimeIniAdapterTests
         Assert.Contains("[BackwardsRun]", ini, StringComparison.Ordinal);
         Assert.Contains("[BackwardsRun]\r\nEnabled=0", ini, StringComparison.Ordinal);
         Assert.Contains("Mode=MultiDirectional", ini, StringComparison.Ordinal);
+        Assert.Contains("ResetHotkey=F9", ini, StringComparison.Ordinal);
         Assert.Contains("[GateMacro]", ini, StringComparison.Ordinal);
         Assert.Contains("Enabled=1", ini, StringComparison.Ordinal);
         Assert.Contains("MappingCount=1", ini, StringComparison.Ordinal);

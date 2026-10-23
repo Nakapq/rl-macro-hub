@@ -30,6 +30,12 @@ AutoHotkey.exe /ErrorStdOut RLMacroHub.Runtime.ahk --self-test
 
 The self-test exits before registering hotkeys, requesting timer resolution, creating a HUD, or sending input.
 
+`Testing/MultiDirectionalRunSelfTest.ahk` exercises real movement transitions
+with captured output and simulated physical keys, including missed releases
+and focus/chat/disable cleanup. See the [in-game acceptance checklist](../../docs/MANA_RUNNING.md#stability-validation)
+for the separate Roblox validation still required. Visual state detection is
+[deferred](../../docs/IMAGE_DETECTION.md) until that baseline is verified.
+
 `--smoke-test` performs normal startup, waits one second with no simulated input, and exits through `OnExit` to verify resource cleanup.
 
 `Testing/ManaOverlayProbe.ahk` creates the layered PNG window off-screen to verify GDI+ decoding, scaling, per-pixel alpha presentation, and cleanup.

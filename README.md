@@ -10,7 +10,7 @@ RL Macro Hub is a native Windows desktop manager for Roblox-focused AutoHotkey m
 - Autoclicker settings with the existing 120 CPS reference behavior, a configurable Roblox-relative inventory-panel exclusion region, and per-profile `1`–`=` ability policies with optional names
 - Dynamic keybinding editor with validation and no fixed legacy row limit
 - Profile-scoped Gate Macro editor with editable Gaia/Khei starter mappings and exact, case-insensitive chat shorthand expansion
-- Profile-scoped Backwards Run macro with legacy `W` + `S`, independent double-tap `A`/`S`/`D`, and multi-directional `W`/`A`/`S`/`D` activation with opposite-direction transitions
+- Profile-scoped Backwards Run macro defaulting to multi-directional `W`/`A`/`S`/`D` activation with opposite-direction transitions, with legacy `W` + `S` behavior available
 - Local profile create, rename, activate, guarded delete, and reliable per-profile macro-setting restoration
 - Single-process, shared-state AutoHotkey v2 runtime split into focused modules
 - AutoHotkey v2 discovery, duplicate prevention, Dashboard lifecycle controls, graceful close, and forced termination fallback

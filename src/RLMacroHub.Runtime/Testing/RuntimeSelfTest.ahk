@@ -69,13 +69,22 @@ class RuntimeSelfTest {
         this.Assert(testBackwardsRunCancellation.CancelCount = 1, "a physical left click should reset backwards-run state")
         inputHandler.OnRunCancelInput()
         this.Assert(testBackwardsRunCancellation.CancelCount = 2, "other registered cancellation inputs should reset backwards-run state")
-        this.Assert(inputHandler.RunCancelHotkeyNames.Length = 4, "right click, Q, V, and G should have pass-through cancellation observers")
+        this.Assert(inputHandler.RunCancelHotkeyNames.Length = 2, "V and G should use unconditional cancellation observers; M2 has its HOLD-aware callback")
+        configuration.BackwardsRun.Mode := "Legacy"
+        inputHandler.OnPhysicalLeftDown()
+        inputHandler.MouseRunCancelCallback.Call()
+        inputHandler.OnRunCancelInput()
+        this.Assert(testBackwardsRunCancellation.CancelCount = 2, "clicks and cancellation keys must leave legacy run state alone")
+        configuration.BackwardsRun.Mode := "MultiDirectional"
+        this.TestLegacyRunCancellation()
+        this.TestDirectionalDash()
+        MultiDirectionalRunSelfTest.Run()
 
         this.Assert(InventoryController.IsInventoryKey("SC029"), "SC029 should be an inventory key")
         this.Assert(configuration.Autoclicker.MaximumCps = 120, "default CPS should remain 120")
         this.Assert(configuration.Keybinds.Bindings.Length = 5, "five default bindings should exist")
         this.Assert(configuration.BackwardsRun.Enabled, "backwards run should default on")
-        this.Assert(configuration.BackwardsRun.Mode = "Legacy", "backwards run should default to legacy mode")
+        this.Assert(configuration.BackwardsRun.Mode = "MultiDirectional", "backwards run should default to multi-directional mode")
         this.Assert(
             BackwardsRunModule.CanActivate(state, configuration.BackwardsRun, true, true),
             "backwards run should activate for W plus S in focused Roblox")
@@ -133,7 +142,7 @@ class RuntimeSelfTest {
         this.Assert(
             BackwardsRunModule.WalkingArrowDirection("", false, false) = "",
             "a G reset should not preserve an arrow after both vertical keys are released")
-        testBackwardsRun := BackwardsRunModule(
+        testBackwardsRun := MultiDirectionalRunFixture(
             state,
             configuration.BackwardsRun,
             RuntimeSelfTestContext(),
@@ -167,7 +176,7 @@ class RuntimeSelfTest {
             "ordinary W input should pass through outside a lateral session")
         this.Assert(
             BackwardsRunModule.CanActivate(state, configuration.BackwardsRun, true, false, false),
-            "double-tap mode should create W input without requiring physical W")
+            "multi-directional mode should create W input without requiring physical W")
         this.Assert(configuration.GateMacro.Enabled, "gate expansion should default on")
         this.Assert(configuration.GateMacro.Mappings.Count = 0, "gate mappings should default empty")
         gateMappings := Map()
@@ -235,8 +244,9 @@ class RuntimeSelfTest {
 
         examplePath := A_ScriptDir "\RLMacroHub.Runtime.example.ini"
         loaded := RuntimeConfiguration.Load(examplePath)
-        this.Assert(loaded.SchemaVersion = 8, "example schema version should load")
+        this.Assert(loaded.SchemaVersion = 9, "example schema version should load")
         this.Assert(loaded.BackwardsRun.Enabled, "backwards run should load")
+        this.Assert(loaded.BackwardsRun.ResetHotkey = "", "example reset key must remain unbound")
         this.Assert(loaded.BackwardsRun.Mode = "MultiDirectional", "multi-directional backwards run mode should load")
         this.Assert(loaded.ManaOverlay.Enabled, "mana overlay should load")
         this.Assert(loaded.ManaOverlay.Scale = 1, "mana overlay scale should load")
@@ -249,6 +259,89 @@ class RuntimeSelfTest {
         this.Assert(loaded.AbilitySlots.AutoclickerEnabled.Count = 12, "ability slot policies should load")
         this.Assert(loaded.AbilitySlots.AutoclickerEnabled.Has("="), "equals slot should survive INI parsing")
         try FileAppend "RL Macro Hub runtime self-test passed.`n", "*"
+    }
+
+    static TestLegacyRunCancellation() {
+        for backwards in [true, false] {
+            configuration := RuntimeConfiguration.CreateDefault()
+            configuration.BackwardsRun.Mode := "Legacy"
+            run := RuntimeSelfTestLegacyRun(RuntimeState(true), configuration.BackwardsRun,
+                RuntimeSelfTestActiveContext(), RuntimeSelfTestLogger())
+            run.SetActivated(true)
+            run.LegacyStarted := true
+            run.ActiveDirection := "s"
+            run.DownHeld := backwards
+            run.UpHeld := !backwards
+            run.OnRunCancel()
+            this.Assert(run.PrepareDash() = "", "legacy dash must not inject movement input")
+            this.Assert(run.Activated && run.State.BackwardsRunActive && run.LegacyStarted,
+                "cancellation inputs must preserve legacy activation and HUD state")
+            this.Assert(run.ActiveDirection = "s" && run.DownHeld = backwards && run.UpHeld = !backwards,
+                "cancellation inputs must preserve legacy forward and backward arrow holds")
+        }
+    }
+
+    static TestDirectionalDash() {
+        for heldKeys in [["a"], ["s"], ["a", "s"], ["w", "a"], ["w", "s"]] {
+            configuration := RuntimeConfiguration.CreateDefault()
+            run := RuntimeSelfTestDashRun(RuntimeState(true), configuration.BackwardsRun,
+                RuntimeSelfTestActiveContext(), RuntimeSelfTestLogger())
+            run.HeldKeys := Map()
+            for key in heldKeys
+                run.HeldKeys[key] := true
+            run.SetActivated(true)
+            run.SyntheticWHeld := true
+            run.WPressForwarded := true
+            run.ArrowHeld := "Up"
+            run.MovementSent := []
+            run.TapCounts["a"] := 1
+            handler := RuntimeSelfTestDashInput(run.State, configuration, "", "", "", "", "", run, RuntimeSelfTestLogger())
+            handler.SentKeys := []
+            handler.OnDashDown()
+            expected := "{Blind}{w up}" (run.IsDirectionHeld("a") ? "{a down}" : "") "{q down}"
+            this.Assert(handler.SentKeys[1] = expected, "dash must release W without re-pressing physical S before Q-down; expected " expected ", got " handler.SentKeys[1])
+            this.Assert(!run.Activated && !run.State.BackwardsRunActive, "dash should finish the run")
+            this.Assert(!run.SyntheticWHeld && !run.WPressForwarded, "dash should relinquish synthetic and forwarded W ownership")
+            this.Assert(!run.PreservedPhysicalMovement && !run.PreservedArrow, "dash cleanup must not preserve forward output")
+            this.Assert(run.ArrowHeld = "" && run.MovementSent[1] = "{Up up}" && run.MovementSent[2] = "{w up}", "real cleanup should release the forward arrow and W")
+            this.Assert(run.TapCounts["a"] = 0, "dash should clear pending double taps")
+            this.Assert(run.ResumeScheduled, "dash should schedule physical walking input restoration")
+            handler.OnDashUp()
+            this.Assert(handler.SentKeys[2] = "{Blind}{q up}", "Q release must be forwarded")
+            run.MovementSent := []
+            run.ResumeWalkingMovement()
+            this.Assert(run.MovementSent.Length = heldKeys.Length - (run.IsDirectionHeld("s") ? 1 : 0), "dash walking resume must leave the continuous physical S hold untouched")
+            this.Assert(run.WPressForwarded = run.IsDirectionHeld("w"), "walking resume must not recreate synthetic W")
+            run.HeldKeys := Map()
+            run.MovementSent := []
+            run.ResumeWalkingMovement()
+            this.Assert(run.MovementSent.Length = 0, "keys released before the resume timer must stay released")
+        }
+
+        ; Ordinary Q, W/D-only runs, chat, disabled runtime, and Legacy mode
+        ; must not receive the special A/S input prefix.
+        for scenario in ["idle", "w", "d", "chat", "disabled", "legacy", "unfocused"] {
+            configuration := RuntimeConfiguration.CreateDefault()
+            context := scenario = "unfocused" ? RuntimeSelfTestContext() : RuntimeSelfTestActiveContext()
+            run := RuntimeSelfTestDashRun(RuntimeState(true), configuration.BackwardsRun, context, RuntimeSelfTestLogger())
+            run.HeldKeys := Map(scenario = "w" || scenario = "d" ? scenario : "a", true)
+            run.SetActivated(scenario != "idle")
+            run.State.TypingPaused := scenario = "chat"
+            run.State.Enabled := scenario != "disabled"
+            if scenario = "legacy"
+                run.Configuration.Mode := "Legacy"
+            handler := RuntimeSelfTestDashInput(run.State, configuration, "", "", "", "", "", run, RuntimeSelfTestLogger())
+            handler.SentKeys := []
+            handler.OnDashDown()
+            handler.OnDashUp()
+            this.Assert(handler.SentKeys[1] = "{Blind}{q down}" && handler.SentKeys[2] = "{Blind}{q up}", "ordinary Q should preserve down/up input: " scenario)
+            if scenario = "legacy"
+                this.Assert(!run.HasOwnProp("NormalCancelCalled") && run.Activated, "legacy Q must leave the run active")
+            else if scenario = "idle"
+                this.Assert(!run.HasOwnProp("NormalCancelCalled") && !run.HasOwnProp("ResumeScheduled"), "Q outside a run must not cancel movement or schedule restoration")
+            else
+                this.Assert(run.NormalCancelCalled, "ordinary Q should retain its existing cancellation path: " scenario)
+        }
     }
 
     static Assert(condition, message) {
@@ -303,5 +396,45 @@ class RuntimeSelfTestBackwardsRunCancellation {
 
 class RuntimeSelfTestLogger {
     Info(*) {
+    }
+}
+
+; Capture input instead of injecting keys into the user's foreground app.
+class RuntimeSelfTestDashInput extends InputCoordinator {
+    SendDashInput(keys) {
+        this.SentKeys.Push(keys)
+    }
+}
+
+class RuntimeSelfTestLegacyRun extends BackwardsRunModule {
+    SendMovementInput(keys) {
+        throw Error("Legacy cancellation must not send movement input: " keys)
+    }
+
+    ScheduleWalkingResume(skipS := false) {
+        throw Error("Legacy cancellation must not schedule walking restoration")
+    }
+}
+
+class RuntimeSelfTestDashRun extends BackwardsRunModule {
+    IsDirectionHeld(key) => this.HeldKeys.Get(key, false)
+
+    ReleaseOutputs(preservePhysicalMovement := false, preserveDirectionalArrow := false) {
+        this.PreservedPhysicalMovement := preservePhysicalMovement
+        this.PreservedArrow := preserveDirectionalArrow
+        super.ReleaseOutputs(preservePhysicalMovement, preserveDirectionalArrow)
+    }
+
+    SendMovementInput(keys) {
+        this.MovementSent.Push(keys)
+    }
+
+    OnRunCancel(*) {
+        this.NormalCancelCalled := true
+    }
+
+    ScheduleWalkingResume(skipS := false) {
+        this.WalkingResumeSkipS := skipS
+        this.ResumeScheduled := true
     }
 }

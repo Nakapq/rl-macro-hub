@@ -21,7 +21,6 @@ public sealed class MacrosViewModel : ObservableObject
     {
         string backwardsRunMode = configuration.BackwardsRun.Mode switch
         {
-            Core.Models.BackwardsRunMode.DoubleTap => "Double-tap S/A/D",
             Core.Models.BackwardsRunMode.MultiDirectional => "Multi-directional W/A/S/D",
             _ => "Legacy W + S"
         };

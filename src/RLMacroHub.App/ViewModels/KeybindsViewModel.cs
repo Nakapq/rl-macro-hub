@@ -93,7 +93,8 @@ public sealed partial class KeybindsViewModel : ObservableObject
                 row.Error = "Source key is duplicated.";
                 valid = false;
             }
-            else if (ReservedRuntimeSources.Contains(row.Source.Trim()))
+            else if (ReservedRuntimeSources.Contains(row.Source.Trim())
+                || string.Equals(row.Source.Trim(), _settings.Current.BackwardsRun.ResetHotkey, StringComparison.OrdinalIgnoreCase))
             {
                 row.Error = "This source is reserved for runtime state tracking.";
                 valid = false;

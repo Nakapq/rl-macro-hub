@@ -65,6 +65,7 @@ public sealed class RuntimeIniAdapter
         output.AppendLine("[BackwardsRun]");
         Append(output, "Enabled", configuration.BackwardsRun.Enabled);
         Append(output, "Mode", configuration.BackwardsRun.Mode.ToString());
+        Append(output, "ResetHotkey", configuration.BackwardsRun.ResetHotkey);
 
         output.AppendLine();
         output.AppendLine("[GateMacro]");

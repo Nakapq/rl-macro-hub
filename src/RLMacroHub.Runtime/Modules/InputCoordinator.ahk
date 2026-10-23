@@ -10,7 +10,7 @@ class InputCoordinator {
         this.BackwardsRun := backwardsRun
         this.Logger := logger
         this.RegisteredHotkeys := []
-        this.RunCancelHotkeyNames := ["$*~RButton", "$*~q", "$*~v", "$*~g"]
+        this.RunCancelHotkeyNames := ["$*~v", "$*~g"]
         this.AbilityKeysDown := Map()
         this.ToggleHotkey := ""
         this.ChatStartCallback := ObjBindMethod(this, "OnChatStart")
@@ -20,6 +20,10 @@ class InputCoordinator {
         this.LeftDownCallback := ObjBindMethod(this, "OnPhysicalLeftDown")
         this.LeftUpCallback := ObjBindMethod(this, "OnPhysicalLeftUp")
         this.RunCancelCallback := ObjBindMethod(this, "OnRunCancelInput")
+        this.MouseRunCancelCallback := ObjBindMethod(this, "OnMouseRunCancelInput")
+        this.RunResetCallback := ObjBindMethod(this, "OnRunReset")
+        this.DashDownCallback := ObjBindMethod(this, "OnDashDown")
+        this.DashUpCallback := ObjBindMethod(this, "OnDashUp")
         this.AbilityCallback := ObjBindMethod(this, "OnAbilityKey")
         this.AbilityUpCallback := ObjBindMethod(this, "OnAbilityKeyUp")
         this.ToggleCallback := ObjBindMethod(this, "OnToggle")
@@ -33,9 +37,16 @@ class InputCoordinator {
         this.RegisterOne("*~SC029", this.InventoryCallback)
         this.RegisterOne("$*~LButton", this.LeftDownCallback)
         this.RegisterOne("$*~LButton Up", this.LeftUpCallback)
-        if this.Configuration.BackwardsRun.Enabled {
+        if this.Configuration.BackwardsRun.Enabled
+            && this.Configuration.BackwardsRun.Mode = "MultiDirectional" {
             for hotkeyName in this.RunCancelHotkeyNames
                 this.RegisterOne(hotkeyName, this.RunCancelCallback)
+            this.RegisterOne("$*~RButton", this.MouseRunCancelCallback)
+            if this.Configuration.BackwardsRun.ResetHotkey != ""
+                this.RegisterOne("$*~" this.Configuration.BackwardsRun.ResetHotkey, this.RunResetCallback)
+            ; Q must reach Roblox after the run's W hold is released.
+            this.RegisterOne("$*q", this.DashDownCallback)
+            this.RegisterOne("$*q Up", this.DashUpCallback)
         }
         for key in RuntimeConfiguration.AbilitySlotKeys {
             this.RegisterOne("*~" key, this.AbilityCallback)
@@ -96,7 +107,7 @@ class InputCoordinator {
         ; into ordinary gameplay even if Roblox never exposes the focus change.
         this.GateMacro.CancelCapture()
         this.State.TypingPaused := false
-        this.OnRunCancelInput()
+        this.OnMouseRunCancelInput()
         this.State.PhysicalLButtonDown := true
         this.State.LastPhysicalDownTick := A_TickCount
         this.Autoclicker.Start()
@@ -108,10 +119,35 @@ class InputCoordinator {
         this.Autoclicker.HardStop()
     }
 
+    OnMouseRunCancelInput(*) {
+        ; M1 and M2 preserve the run while the ability policy shows HOLD.
+        if this.State.AbilityAutoclickEnabled
+            this.OnRunCancelInput()
+    }
+
+    OnRunReset(*) => this.BackwardsRun.ResetRun()
+
     OnRunCancelInput(*) {
         if this.Configuration.BackwardsRun.Enabled
+            && this.Configuration.BackwardsRun.Mode = "MultiDirectional"
             this.BackwardsRun.OnRunCancel()
     }
+
+    OnDashDown(*) {
+        Critical "On"
+        try {
+            movementPrefix := this.BackwardsRun.PrepareDash()
+            this.SendDashInput("{Blind}" movementPrefix "{q down}")
+        } finally {
+            Critical "Off"
+        }
+    }
+
+    OnDashUp(*) {
+        this.SendDashInput("{Blind}{q up}")
+    }
+
+    SendDashInput(keys) => SendInput(keys)
 
     OnAbilityKey(thisHotkey) {
         pressedKey := InputCoordinator.AbilityKeyFromHotkey(thisHotkey)

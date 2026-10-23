@@ -82,6 +82,7 @@ public sealed class ProfileServiceTests
         settings.Current.Keybinds.Bindings = [new KeyBinding("q", "1")];
         settings.Current.BackwardsRun.Enabled = false;
         settings.Current.BackwardsRun.Mode = BackwardsRunMode.Legacy;
+        settings.Current.BackwardsRun.ResetHotkey = "F8";
         settings.Current.GateMacro.Enabled = true;
         settings.Current.GateMacro.Mappings = [new GateLocationMapping("d5", "desert 5")];
         settings.Current.Overlay.ClickThrough = true;
@@ -95,6 +96,7 @@ public sealed class ProfileServiceTests
         settings.Current.Keybinds.Bindings = [new KeyBinding("e", "2")];
         settings.Current.BackwardsRun.Enabled = true;
         settings.Current.BackwardsRun.Mode = BackwardsRunMode.MultiDirectional;
+        settings.Current.BackwardsRun.ResetHotkey = string.Empty;
         settings.Current.GateMacro.Enabled = false;
         settings.Current.GateMacro.Mappings = [new GateLocationMapping("c2", "castle 2")];
         settings.Current.Overlay.ClickThrough = false;
@@ -107,6 +109,7 @@ public sealed class ProfileServiceTests
         Assert.True(settings.Current.Overlay.ClickThrough);
         Assert.False(settings.Current.BackwardsRun.Enabled);
         Assert.Equal(BackwardsRunMode.Legacy, settings.Current.BackwardsRun.Mode);
+        Assert.Equal("F8", settings.Current.BackwardsRun.ResetHotkey);
         Assert.True(settings.Current.GateMacro.Enabled);
         Assert.Equal("d5", Assert.Single(settings.Current.GateMacro.Mappings).Notation);
         Assert.Equal(@"D:\AHK\AutoHotkey64.exe", settings.Current.General.AutoHotkeyExecutablePath);
@@ -117,6 +120,7 @@ public sealed class ProfileServiceTests
         Assert.False(settings.Current.Overlay.ClickThrough);
         Assert.True(settings.Current.BackwardsRun.Enabled);
         Assert.Equal(BackwardsRunMode.MultiDirectional, settings.Current.BackwardsRun.Mode);
+        Assert.Empty(settings.Current.BackwardsRun.ResetHotkey);
         Assert.False(settings.Current.GateMacro.Enabled);
         Assert.Equal("c2", Assert.Single(settings.Current.GateMacro.Mappings).Notation);
         Assert.Equal(@"D:\AHK\AutoHotkey64.exe", settings.Current.General.AutoHotkeyExecutablePath);

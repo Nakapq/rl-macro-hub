@@ -1,5 +1,5 @@
 class RuntimeConfiguration {
-    static CurrentSchemaVersion := 8
+    static CurrentSchemaVersion := 9
     static MaximumGateMappings := 100
     static MaximumGateNotationLength := 20
     static MaximumGateLocationLength := 120
@@ -52,7 +52,8 @@ class RuntimeConfiguration {
             },
             BackwardsRun: {
                 Enabled: true,
-                Mode: "Legacy"
+                Mode: "MultiDirectional",
+                ResetHotkey: ""
             },
             GateMacro: {
                 Enabled: true,
@@ -173,16 +174,22 @@ class RuntimeConfiguration {
             }
 
             configuration.BackwardsRun.Enabled := this.ReadBoolean(path, "BackwardsRun", "Enabled", true)
-            backwardsRunMode := StrLower(this.ReadRequired(path, "BackwardsRun", "Mode", "Legacy"))
-            if backwardsRunMode = "multidirectional" {
+            backwardsRunMode := StrLower(this.ReadRequired(path, "BackwardsRun", "Mode", "MultiDirectional"))
+            if backwardsRunMode = "multidirectional" || backwardsRunMode = "doubletap" {
                 configuration.BackwardsRun.Mode := "MultiDirectional"
-            } else if backwardsRunMode = "doubletap" {
-                configuration.BackwardsRun.Mode := "DoubleTap"
             } else {
                 configuration.BackwardsRun.Mode := "Legacy"
-                if backwardsRunMode != "legacy" && IsObject(logger)
-                    logger.Warn("Invalid Backwards Run mode was reset to Legacy.")
+                if backwardsRunMode != "legacy" && IsObject(logger) {
+                    configuration.BackwardsRun.Mode := "MultiDirectional"
+                    logger.Warn("Invalid Backwards Run mode was reset to MultiDirectional.")
+                }
             }
+
+            resetHotkey := Trim(IniRead(path, "BackwardsRun", "ResetHotkey", ""))
+            if this.IsValidRunResetHotkey(resetHotkey, configuration)
+                configuration.BackwardsRun.ResetHotkey := resetHotkey
+            else if IsObject(logger)
+                logger.Warn("Invalid or conflicting run reset key was left unbound.")
 
             configuration.GateMacro.Enabled := this.ReadBoolean(path, "GateMacro", "Enabled", true)
             configuration.GateMacro.Mappings := Map()
@@ -228,6 +235,19 @@ class RuntimeConfiguration {
         }
 
         return configuration
+    }
+
+    static IsValidRunResetHotkey(key, configuration) {
+        if key = ""
+            return true
+        if !RegExMatch(key, "i)^(F([1-9]|1[0-9]|2[0-4])|MButton|XButton[12])$")
+            || this.NormalizeKeyName(key) = this.NormalizeKeyName(configuration.General.ToggleHotkey)
+            return false
+        for binding in configuration.Keybinds.Bindings {
+            if this.NormalizeKeyName(key) = this.NormalizeKeyName(binding.Source)
+                return false
+        }
+        return true
     }
 
     static IsReservedBindingSource(source) {

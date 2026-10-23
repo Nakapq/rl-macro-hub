@@ -49,6 +49,12 @@ public sealed partial class AutoclickerViewModel : ObservableObject
     [RelayCommand]
     private async Task SaveAsync()
     {
+        if (_settings.Current.BackwardsRun.ResetHotkey.Length > 0
+            && string.Equals(ToggleHotkey.Trim(), _settings.Current.BackwardsRun.ResetHotkey, StringComparison.OrdinalIgnoreCase))
+        {
+            SaveStatus = "The runtime toggle conflicts with the run reset key.";
+            return;
+        }
         var configuration = _settings.Current.Autoclicker;
         configuration.Enabled = Enabled;
         configuration.ToggleHotkey = ToggleHotkey;

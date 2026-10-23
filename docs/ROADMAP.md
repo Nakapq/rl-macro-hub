@@ -1,5 +1,15 @@
 # Roadmap
 
+## Current priority — stable multi-directional running
+
+- Validate activation, direction transfers, cancellation, missed releases,
+  focus/chat/toggle cleanup, and shutdown before adding movement features.
+- Complete automated regression checks and the real-game
+  [stability checklist](MANA_RUNNING.md#stability-validation).
+- Defer the optional image-detection variant until that baseline is verified.
+  The [visual detection design and training plan](IMAGE_DETECTION.md) records
+  the proposed libraries, camera coverage, limitations, and rollout gates.
+
 ## Phase 1 — foundation
 
 - App shell and module navigation

@@ -6,8 +6,15 @@
         <StackPanel Padding="36,28,36,48" Spacing="16" MaxWidth="820" HorizontalAlignment="Left">
             <StackPanel Spacing="5">
                 <TextBlock Text="Backwards Run" Style="{StaticResource PageTitleTextStyle}" />
-                <TextBlock Text="Choose the original W + S behavior, independent double taps, or opposite-direction transitions." Style="{StaticResource MutedTextStyle}" TextWrapping="Wrap" />
+                <TextBlock Text="Choose multi-directional activation with opposite-direction transitions or the original W + S behavior." Style="{StaticResource MutedTextStyle}" TextWrapping="Wrap" />
             </StackPanel>
+
+            <InfoBar
+                IsOpen="True"
+                IsClosable="False"
+                Severity="Informational"
+                Title="Multi-Directional mode (default)"
+                Message="Double-tap W, A, S, or D within 200 ms. The macro establishes a neutral mana run, then keeps a single vertical or horizontal session active. Press the opposite key to change direction; releasing it falls back to the original key if it is still held." />
 
             <InfoBar
                 IsOpen="True"
@@ -16,22 +23,16 @@
                 Title="Legacy mode"
                 Message="While physically holding W, the first S press taps Up Arrow and holds Down Arrow. Releasing S releases Down and holds Up. Later S presses release Up and hold Down; releasing W releases all synthetic keys and resets the sequence." />
 
-            <InfoBar
-                IsOpen="True"
-                IsClosable="False"
-                Severity="Informational"
-                Title="Multi-Directional mode"
-                Message="Double-tap W, A, S, or D within 200 ms. The macro establishes a neutral mana run, then keeps a single vertical or horizontal session active. Press the opposite key to change direction; releasing it falls back to the original key if it is still held." />
-
             <Border Style="{StaticResource SettingCardStyle}">
                 <StackPanel Spacing="14">
                     <TextBlock Text="Runtime behavior" Style="{StaticResource SectionTitleTextStyle}" />
                     <ToggleSwitch Header="Enable Backwards Run" IsOn="{x:Bind ViewModel.Enabled, Mode=TwoWay}" />
                     <ComboBox Header="Activation mode" SelectedIndex="{x:Bind ViewModel.SelectedModeIndex, Mode=TwoWay}" MaxWidth="380" HorizontalAlignment="Stretch">
-                        <ComboBoxItem Content="Legacy — hold S while W is active" />
-                        <ComboBoxItem Content="Double Tap — double-tap A, S, or D" />
                         <ComboBoxItem Content="Multi-Directional — double-tap W/A/S/D and transition opposites" />
+                        <ComboBoxItem Content="Legacy — hold S while W is active" />
                     </ComboBox>
+                    <ComboBox Header="Reset key (Multi-Directional)" ItemsSource="{x:Bind ViewModel.ResetHotkeyOptions}" SelectedItem="{x:Bind ViewModel.SelectedResetHotkey, Mode=TwoWay}" MaxWidth="380" HorizontalAlignment="Stretch" />
+                    <TextBlock Text="Double-tap the current direction again to recover a stalled run. The optional reset key clears the session so you can start fresh; it defaults to Unbound. The reset key also passes through to the game." Style="{StaticResource MutedTextStyle}" TextWrapping="Wrap" />
                     <TextBlock Text="The hotkey works only while Roblox is focused and the macro runtime is enabled. It is suppressed while chat or another remap is active." Style="{StaticResource MutedTextStyle}" TextWrapping="Wrap" />
                 </StackPanel>
             </Border>

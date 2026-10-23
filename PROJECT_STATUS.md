@@ -1,6 +1,49 @@
 # Project status
 
-Last updated: 2026-09-27
+Last updated: 2026-10-23
+
+## Current priority
+
+Stabilize input-driven Multi-Directional running before adding a visual
+detection variant. The [deferred design](docs/IMAGE_DETECTION.md) records the
+animation-recognition approach, candidate libraries, camera-diverse training,
+unknown-state handling, and evaluation gates. No image detector is implemented.
+
+The 2026-10-22 stability pass reproduced and fixed missed-release arrow/ownership
+cleanup and direction reconciliation occurring before focus/chat/disable cleanup.
+Generated input and physical-key reads now use overridable boundaries so the
+real movement state machine can be exercised without sending foreground input.
+Keyboard/mouse hook installation happens after the self-test exit path.
+
+M1/M2 now preserve Multi-Directional run state while the selected ability puts
+autoclicking on HOLD. The next physical M1/M2 after leaving HOLD cancels normally;
+other cancellation inputs keep their existing behavior. Regression coverage
+checks all four run directions, ability equip/unequip transitions, mouse
+tracking, and the shared G/V cancellation path during HOLD.
+
+S dashes now leave the physical S hold untouched and preserve an existing
+backward arrow until S is released. The dash sequence, Q release, and its
+delayed callback do not synthesize S releases or re-presses. This applies to
+running and walking; ordinary focus/chat/disable cleanup still releases macro
+output. AHK regression tests pass; uninterrupted in-game backward movement
+still needs confirmation in Roblox.
+
+A/S dash adjustments now require an active macro run. Outside a run, Q emits
+only its down/up events without resetting movement or scheduling restoration.
+AHK regressions cover A/S and mixed held directions, retained walking arrows,
+and Q repeats, alongside the existing active-run dash tests.
+
+Latest verification:
+
+- Full Debug x64 solution build into an isolated output directory: **passed**,
+  0 warnings and 0 errors.
+- .NET tests: **53/53 passed**, no failures or skips.
+- AHK self-test including the new movement regression suite: **passed**.
+- Isolated AHK startup/shutdown smoke test with macro features disabled:
+  **passed**, exit code 0. This verifies lifecycle, not live movement hooks.
+- Real Roblox [acceptance checklist](docs/MANA_RUNNING.md#stability-validation):
+  **pending**. The baseline is not yet certified stable in-game. The Run HUD
+  remains an input-derived estimate, including during climbing/game-driven stops.
 
 ## Created
 
@@ -15,7 +58,7 @@ Last updated: 2026-09-27
 - Dashboard state changes from Roblox/runtime services, with prominent runtime Start/Stop controls
 - Explicit-save autoclicker and mana-overlay settings, twelve named two-state ability slots, and dynamic validated bindings
 - Profile-scoped Gate Macro settings with validated notation/location mappings and exact case-insensitive Roblox chat expansion
-- Profile-scoped Backwards Run modes with Roblox-only, chat-safe legacy `W` + `S`, independent double-tap `A`/`S`/`D`, and multi-directional `W`/`A`/`S`/`D` activation with opposite-axis transitions and held-key fallback
+- Profile-scoped Backwards Run modes defaulting to Roblox-only, chat-safe multi-directional `W`/`A`/`S`/`D` activation with opposite-axis transitions and held-key fallback, with legacy `W` + `S` behavior available
 - Default/profile CRUD safeguards, automatic activation on create, active-profile write-back for Autoclicker, Backwards Run, Gate Macro, Mana Overlay, and Keybinds, global-setting preservation, and UI refresh on profile switch
 - AutoHotkey v2-only discovery, isolated staging/configuration, duplicate prevention, graceful shutdown, fallback termination
 - Shared-state AHK v2 modules for input, inventory, ability selection, chat-safe slot handling, client-relative inventory-panel hit-testing and optional click-through border, remaps, QPC clicking, Roblox context, timer resolution, logging, autoclicker HUD, and PNG mana guide
@@ -26,9 +69,12 @@ Last updated: 2026-09-27
 
 ## Actual verification
 
+The following records the earlier project-wide verification. The latest
+movement stability results and remaining acceptance gate are listed above.
+
 - `dotnet restore RLMacroHub.sln`: **succeeded** for all four projects.
-- `dotnet build RLMacroHub.sln -c Debug -p:Platform=x64 --no-restore`: **succeeded**, 0 warnings and 0 errors.
-- Test project: **passed 39/39**, 0 failed/skipped, including Multi-Directional Backwards Run persistence/INI projection, reserved-hotkey validation, Gate Macro normalization, profile switching, and existing recovery behavior.
+- Isolated `Release` x64 app build: **succeeded**, 0 warnings and 0 errors (the normal output was locked by the running app).
+- Test project: **passed 53/53**, 0 failed/skipped, including default Multi-Directional Backwards Run behavior, removed Double Tap mode migration, persistence/INI projection, reserved-hotkey validation, Gate Macro normalization, profile switching, and existing recovery behavior.
 - AutoHotkey v2 `--self-test`: **passed** using the installed v2 interpreter without registering hooks or sending input.
 - AutoHotkey v2 `--smoke-test`: **passed**; normal modules/hooks/timers initialized, no Roblox/input was simulated, and `OnExit` logged clean shutdown with code 0.
 - AutoHotkey v2 mana overlay probe: **passed**; the byte-identical PNG was decoded into an off-screen GDI+ layered window, scaled to 1920 × 1080, presented with per-pixel alpha, and cleaned up with code 0.
@@ -51,8 +97,8 @@ The first launch attempt exposed that Windows App SDK 2.4 was not registered mac
 
 ## Best next five tasks
 
-1. Add structured IPC between the modular AHK v2 runtime and C# for enabled state, CPS, and actionable errors.
-2. Build a keyboard/mouse capture dialog with conflict detection for the keybind editor.
-3. Implement drag/edit/save behavior for overlay elements with per-monitor DPI conversion.
-4. Add explicit staged-runtime version metadata and stale-file cleanup/migration.
-5. Add real Roblox + AHK integration smoke tests and shutdown/orphan-process diagnostics.
+1. Complete the Multi-Directional in-game acceptance checklist and fix reproducible failures before considering image detection.
+2. Add structured IPC between the modular AHK v2 runtime and C# for enabled state, CPS, and actionable errors.
+3. Build a keyboard/mouse capture dialog with conflict detection for the keybind editor.
+4. Implement drag/edit/save behavior for overlay elements with per-monitor DPI conversion.
+5. Add staged-runtime version metadata, stale-file cleanup/migration, and shutdown/orphan-process diagnostics.

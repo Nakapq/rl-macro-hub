@@ -19,10 +19,9 @@
 #Include "Modules\ManaOverlay.ahk"
 #Include "Modules\StatusOverlay.ahk"
 #Include "Testing\RuntimeSelfTest.ahk"
+#Include "Testing\MultiDirectionalRunSelfTest.ahk"
 
 Persistent
-InstallMouseHook
-InstallKeybdHook
 SetTitleMatchMode 2
 SetKeyDelay 0, 0
 SetMouseDelay -1
@@ -30,10 +29,16 @@ SendMode "Event"
 SetStoreCapsLockMode false
 
 if HasCommandLineArgument("--self-test") {
-    RuntimeSelfTest.Run()
+    try RuntimeSelfTest.Run()
+    catch as selfTestError {
+        FileAppend "Runtime self-test failed: " selfTestError.Message "`n" selfTestError.Stack "`n", "**"
+        ExitApp 1
+    }
     ExitApp 0
 }
 
+InstallMouseHook
+InstallKeybdHook
 global RLMacroRuntime := MacroRuntime(A_ScriptDir)
 RLMacroRuntime.Start()
 if HasCommandLineArgument("--smoke-test")

@@ -1,11 +1,12 @@
 using System.Collections.ObjectModel;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace RLMacroHub.Core.Models;
 
 public sealed class AppConfiguration
 {
-    public const int CurrentSchemaVersion = 8;
+    public const int CurrentSchemaVersion = 9;
 
     public int SchemaVersion { get; set; } = CurrentSchemaVersion;
     public GeneralConfiguration General { get; set; } = new();
@@ -51,7 +52,7 @@ public sealed class AppConfiguration
         Keybinds.Bindings ??= [];
         if (!Enum.IsDefined(BackwardsRun.Mode))
         {
-            BackwardsRun.Mode = BackwardsRunMode.Legacy;
+            BackwardsRun.Mode = BackwardsRunMode.MultiDirectional;
         }
         GateMacro.ValidateAndNormalize();
         ManaOverlay.ValidateAndNormalize();
@@ -62,6 +63,13 @@ public sealed class AppConfiguration
         {
             binding.Source = binding.Source?.Trim() ?? string.Empty;
             binding.Target = binding.Target?.Trim() ?? string.Empty;
+        }
+
+        BackwardsRun.ResetHotkey = BackwardsRun.ResetHotkey?.Trim() ?? string.Empty;
+        if (BackwardsRunConfiguration.GetResetHotkeyError(BackwardsRun.ResetHotkey,
+            Autoclicker.ToggleHotkey, Keybinds.Bindings) is not null)
+        {
+            BackwardsRun.ResetHotkey = string.Empty;
         }
 
         Overlay.NormalizeElements();
@@ -75,15 +83,81 @@ public sealed class AppConfiguration
 public sealed class BackwardsRunConfiguration
 {
     public bool Enabled { get; set; } = true;
-    public BackwardsRunMode Mode { get; set; } = BackwardsRunMode.Legacy;
+    public BackwardsRunMode Mode { get; set; } = BackwardsRunMode.MultiDirectional;
+    public string ResetHotkey { get; set; } = string.Empty;
+
+    public static IReadOnlyList<string> ResetHotkeys { get; } =
+        Enumerable.Range(1, 24).Select(number => $"F{number}")
+            .Concat(["MButton", "XButton1", "XButton2"]).ToArray();
+
+    public static string? GetResetHotkeyError(string? key, string toggleHotkey, IEnumerable<KeyBinding> bindings)
+    {
+        key = key?.Trim() ?? string.Empty;
+        if (key.Length == 0)
+        {
+            return null;
+        }
+        if (!ResetHotkeys.Contains(key, StringComparer.OrdinalIgnoreCase))
+        {
+            return "Choose a function key or middle/side mouse button for reset.";
+        }
+        if (string.Equals(key, toggleHotkey.Trim(), StringComparison.OrdinalIgnoreCase))
+        {
+            return "The reset key conflicts with the runtime toggle.";
+        }
+        if (bindings.Any(binding => string.Equals(key, binding.Source?.Trim(), StringComparison.OrdinalIgnoreCase)))
+        {
+            return "The reset key conflicts with a remap source.";
+        }
+        return null;
+    }
 }
 
-[JsonConverter(typeof(JsonStringEnumConverter))]
+[JsonConverter(typeof(BackwardsRunModeJsonConverter))]
 public enum BackwardsRunMode
 {
     Legacy,
-    DoubleTap,
     MultiDirectional
+}
+
+public sealed class BackwardsRunModeJsonConverter : JsonConverter<BackwardsRunMode>
+{
+    public override BackwardsRunMode Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType == JsonTokenType.String)
+        {
+            string? value = reader.GetString();
+            if (string.Equals(value, nameof(BackwardsRunMode.Legacy), StringComparison.OrdinalIgnoreCase))
+            {
+                return BackwardsRunMode.Legacy;
+            }
+
+            if (string.Equals(value, nameof(BackwardsRunMode.MultiDirectional), StringComparison.OrdinalIgnoreCase)
+                || string.Equals(value, "DoubleTap", StringComparison.OrdinalIgnoreCase))
+            {
+                return BackwardsRunMode.MultiDirectional;
+            }
+        }
+        else if (reader.TokenType == JsonTokenType.Number && reader.TryGetInt32(out int value))
+        {
+            return value switch
+            {
+                0 => BackwardsRunMode.Legacy,
+                1 or 2 => BackwardsRunMode.MultiDirectional,
+                _ => throw new JsonException($"Unsupported Backwards Run mode value: {value}.")
+            };
+        }
+
+        throw new JsonException("Unsupported Backwards Run mode.");
+    }
+
+    public override void Write(Utf8JsonWriter writer, BackwardsRunMode value, JsonSerializerOptions options) =>
+        writer.WriteStringValue(value switch
+        {
+            BackwardsRunMode.Legacy => nameof(BackwardsRunMode.Legacy),
+            BackwardsRunMode.MultiDirectional => nameof(BackwardsRunMode.MultiDirectional),
+            _ => throw new JsonException($"Unsupported Backwards Run mode value: {value}.")
+        });
 }
 
 public sealed class GateMacroConfiguration
